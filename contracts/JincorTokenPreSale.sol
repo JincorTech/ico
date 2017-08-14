@@ -72,7 +72,7 @@ contract JincorTokenPreSale is Ownable {
     }
 
     function () payable {
-        if (msg.value < 0.01 * 1 ether) throw;
+        if (msg.value < 0.1 * 1 ether) throw;
         doPurchase(msg.sender);
     }
 

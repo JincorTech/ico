@@ -16,9 +16,9 @@ contract JincorToken is StandardToken, Ownable {
   uint256 public INITIAL_SUPPLY = 35000000 * 1 ether;
 
   /* The finalizer contract that allows unlift the transfer limits on this token */
- address public releaseAgent;
+  address public releaseAgent;
 
- /** A crowdsale contract can release us to the wild if ICO success. If false we are are in transfer lock up period.*/
+  /** A crowdsale contract can release us to the wild if ICO success. If false we are are in transfer lock up period.*/
   bool public released = false;
 
   /** Map of agents that are allowed to transfer tokens regardless of the lock down period. These are crowdsale contracts and possible the team multisig itself. */
@@ -30,8 +30,8 @@ contract JincorToken is StandardToken, Ownable {
    */
   modifier canTransfer(address _sender) {
 
-    if(!released) {
-        if(!transferAgents[_sender]) {
+    if (!released) {
+        if (!transferAgents[_sender]) {
             throw;
         }
     }
@@ -41,7 +41,7 @@ contract JincorToken is StandardToken, Ownable {
 
   /** The function can be called only before or after the tokens have been releasesd */
   modifier inReleaseState(bool releaseState) {
-    if(releaseState != released) {
+    if (releaseState != released) {
         throw;
     }
     _;
@@ -49,7 +49,7 @@ contract JincorToken is StandardToken, Ownable {
 
   /** The function can be called only by a whitelisted release agent. */
   modifier onlyReleaseAgent() {
-    if(msg.sender != releaseAgent) {
+    if (msg.sender != releaseAgent) {
         throw;
     }
     _;
@@ -76,6 +76,10 @@ contract JincorToken is StandardToken, Ownable {
     releaseAgent = addr;
   }
 
+  function release() onlyReleaseAgent inReleaseState(false) public {
+    released = true;
+  }
+
   /**
    * Owner can allow a particular address (a crowdsale contract) to transfer tokens despite the lock up period.
    */
@@ -92,7 +96,4 @@ contract JincorToken is StandardToken, Ownable {
     // Call StandardToken.transferForm()
     return super.transferFrom(_from, _to, _value);
   }
-
-
-
 }
