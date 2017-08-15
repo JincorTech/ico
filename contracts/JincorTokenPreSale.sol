@@ -15,17 +15,16 @@ contract JincorTokenPreSale is Ownable {
 
     uint public hardCap;
     uint public softCap;
-    uint public collected;
     uint public price;
     uint public purchaseLimit;
 
+    uint public collected = 0;
     uint public tokensSold = 0;
-    uint public weiRaised = 0;
     uint public investorCount = 0;
     uint public weiRefunded = 0;
 
-    uint public startTime;
-    uint public endTime;
+    uint public startBlock;
+    uint public endBlock;
 
     bool public softCapReached = false;
     bool public crowdsaleFinished = false;
@@ -37,13 +36,13 @@ contract JincorTokenPreSale is Ownable {
     event NewContribution(address indexed holder, uint256 tokenAmount, uint256 etherAmount);
     event Refunded(address indexed holder, uint256 amount);
 
-    modifier onlyAfter(uint time) {
-        if (now < time) throw;
+    modifier preSaleActive() {
+        if (block.number < startBlock || block.number > endBlock) throw;
         _;
     }
 
-    modifier onlyBefore(uint time) {
-        if (now > time) throw;
+    modifier preSaleEnded() {
+        if (block.number <= endBlock) throw;
         _;
     }
 
@@ -56,19 +55,19 @@ contract JincorTokenPreSale is Ownable {
         uint _priceETH,
         uint _purchaseLimitUSD,
 
-        uint _startTime,
-        uint _duration
+        uint _startBlock,
+        uint _endBlock
     ) {
         hardCap = _hardCapUSD  * 1 ether / _priceETH;
         softCap = _softCapUSD * 1 ether / _priceETH;
         price = _totalTokens * 1 ether / hardCap;
 
-        purchaseLimit = _purchaseLimitUSD * 1 ether / _priceETH * price;
+        purchaseLimit = ((_purchaseLimitUSD * 1 ether) / _priceETH) * price;
         token = JincorToken(_token);
         beneficiary = _beneficiary;
 
-        startTime = _startTime;
-        endTime = _startTime + _duration * 1 hours;
+        startBlock = _startBlock;
+        endBlock = _endBlock;
     }
 
     function () payable {
@@ -76,7 +75,7 @@ contract JincorTokenPreSale is Ownable {
         doPurchase(msg.sender);
     }
 
-    function refund() external onlyAfter(endTime) {
+    function refund() external preSaleEnded {
         if (softCapReached) throw;
         if (refunded[msg.sender]) throw;
 
@@ -101,7 +100,7 @@ contract JincorTokenPreSale is Ownable {
         crowdsaleFinished = true;
     }
 
-    function doPurchase(address _owner) private onlyAfter(startTime) onlyBefore(endTime) {
+    function doPurchase(address _owner) private preSaleActive {
 
         assert(crowdsaleFinished == false);
         if (collected.add(msg.value) > hardCap) throw;
@@ -119,7 +118,6 @@ contract JincorTokenPreSale is Ownable {
 
         token.transfer(msg.sender, tokens);
 
-        weiRaised = weiRaised.add(msg.value);
         tokensSold = tokensSold.add(tokens);
 
         NewContribution(_owner, tokens, msg.value);

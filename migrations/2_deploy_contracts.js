@@ -14,8 +14,8 @@ module.exports = function(deployer) {
     const totalTokens = web3.toWei(1400000, "ether");
     const limit = 50000;
     const beneficiary = web3.eth.accounts[0];
-    const start = (Number(new Date())) / 1000;
-    const duration = 24;
-    deployer.deploy(JincorTokenPreSale, hardCap, softCap, token, beneficiary, totalTokens, 255, limit, start, duration);
+    const startBlock = web3.eth.blockNumber;
+    const endBlock = web3.eth.blockNumber + 100;
+    deployer.deploy(JincorTokenPreSale, hardCap, softCap, token, beneficiary, totalTokens, 255, limit, startBlock, endBlock);
   });
 };
