@@ -1,5 +1,5 @@
 # JCR token and Jincor PRE ICO
-![Jincor logo](https://raw.githubusercontent.com/JincorTech/backend-auth/master/Logo.png)
+![Jincor logo](https://raw.githubusercontent.com/JincorTech/ico/master/logo.png)
 
 Baked with <3 by [Jincor](https://ico.jincor.com)
 
