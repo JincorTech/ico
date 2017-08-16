@@ -1,5 +1,4 @@
 const JincorToken = artifacts.require("JincorToken");
-const JincorTokenPreSale = artifacts.require("JincorTokenPreSale");
 const assertJump = require("zeppelin-solidity/test/helpers/assertJump.js");
 
 contract('JincorToken', function(accounts) {
@@ -105,7 +104,7 @@ contract('JincorToken', function(accounts) {
     assert.fail('should have thrown before');
   });
 
-  it("should not allow transfer when token is not released and 'sender' is not added to releaseAgent map", async function() {
+  it("should not allow transfer when token is not released and 'sender' is not added to transferAgents map", async function() {
     let token = await JincorToken.new();
 
     try {
@@ -158,7 +157,7 @@ contract('JincorToken', function(accounts) {
     assert.equal(balance1.valueOf(), 100 * 10 ** 18);
   });
 
-  it("should not allow transferFrom when token is not released and 'from' is not added to releaseAgent map", async function() {
+  it("should not allow transferFrom when token is not released and 'from' is not added to transferAgents map", async function() {
     let token = await JincorToken.new();
     await token.approve(accounts[1], 100 * 10 ** 18);
 
