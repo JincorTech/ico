@@ -33,6 +33,63 @@ contract('JincorTokenPresale', function (accounts) {
     this.token.transfer(this.crowdsale.address, web3.toWei(2800, "ether"));
   });
 
+  it('should allow to halt by owner', async function () {
+    await this.crowdsale.halt();
+
+    const halted = await this.crowdsale.halted();
+
+    assert.equal(halted, true);
+  });
+
+  it('should not allow to halt by not owner', async function () {
+    try {
+      await this.crowdsale.halt({from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should not allow to halt if already halted', async function () {
+    await this.crowdsale.halt();
+
+    try {
+      await this.crowdsale.halt();
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should allow to unhalt by owner', async function () {
+    await this.crowdsale.halt();
+
+    await this.crowdsale.unhalt();
+    const halted = await this.crowdsale.halted();
+
+    assert.equal(halted, false);
+  });
+
+  it('should not allow to unhalt when not halted', async function () {
+    try {
+      await this.crowdsale.unhalt();
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should not allow to unhalt by not owner', async function () {
+    await this.crowdsale.halt();
+
+    try {
+      await this.crowdsale.unhalt({from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
   it('should send tokens to purchaser', async function () {
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[2]});
 
@@ -50,6 +107,17 @@ contract('JincorTokenPresale', function (accounts) {
 
     const tokensSold = await this.crowdsale.tokensSold();
     assert.equal(tokensSold.valueOf(), 1000 * 10 ** 18);
+  });
+
+  it('should not allow purchase when pre sale is halted', async function () {
+    await this.crowdsale.halt();
+
+    try {
+      await this.crowdsale.sendTransaction({value: 0.11 * 10 ** 18, from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
   });
 
   it('should not allow to send less than 0.1 ETH', async function () {
@@ -144,9 +212,7 @@ contract('JincorTokenPresale', function (accounts) {
   });
 
   it('should not allow purchase if pre sale is ended', async function () {
-    while (web3.eth.blockNumber < this.endBlock) {
-      await this.crowdsale.sendTransaction({value: 0.1 * 10 ** 18, from: accounts[2]});
-    }
+    advanceToBlock(this.endBlock);
 
     try {
       await this.crowdsale.sendTransaction({value: 0.1 * 10 ** 18, from: accounts[2]});
@@ -175,6 +241,21 @@ contract('JincorTokenPresale', function (accounts) {
 
     try {
       await this.crowdsale.refund({from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should not allow refund if pre sale is halted', async function () {
+    await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[1]});
+
+    await advanceToBlock(this.endBlock);
+
+    await this.crowdsale.halt();
+
+    try {
+      await this.crowdsale.refund({from: accounts[1]});
     } catch (error) {
       return assertJump(error);
     }

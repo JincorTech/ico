@@ -14,23 +14,23 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 contract Haltable is Ownable {
   bool public halted;
 
-  modifier stopInEmergency {
+  modifier inNormalState {
     assert(!halted);
     _;
   }
 
-  modifier onlyInEmergency {
+  modifier inEmergencyState {
     assert(halted);
     _;
   }
 
   // called by the owner on emergency, triggers stopped state
-  function halt() external onlyOwner {
+  function halt() external onlyOwner inNormalState {
     halted = true;
   }
 
   // called by the owner on end of emergency, returns to normal state
-  function unhalt() external onlyOwner onlyInEmergency {
+  function unhalt() external onlyOwner inEmergencyState {
     halted = false;
   }
 

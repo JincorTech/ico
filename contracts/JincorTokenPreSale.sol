@@ -1,11 +1,11 @@
 pragma solidity ^0.4.11;
 
-/*import "./Haltable.sol";*/
+import "./Haltable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./JincorToken.sol";
 
-contract JincorTokenPreSale is Ownable {
+contract JincorTokenPreSale is Ownable, Haltable {
     using SafeMath for uint;
 
     string public name = "Jincor Token PreSale";
@@ -75,7 +75,7 @@ contract JincorTokenPreSale is Ownable {
         doPurchase(msg.sender);
     }
 
-    function refund() external preSaleEnded {
+    function refund() external preSaleEnded inNormalState {
         if (softCapReached) throw;
         if (refunded[msg.sender]) throw;
 
@@ -100,7 +100,7 @@ contract JincorTokenPreSale is Ownable {
         crowdsaleFinished = true;
     }
 
-    function doPurchase(address _owner) private preSaleActive {
+    function doPurchase(address _owner) private preSaleActive inNormalState {
 
         assert(crowdsaleFinished == false);
         if (collected.add(msg.value) > hardCap) throw;
