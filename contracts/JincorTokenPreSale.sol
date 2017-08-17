@@ -51,12 +51,12 @@ contract JincorTokenPreSale is Ownable, Haltable {
   event Refunded(address indexed holder, uint256 amount);
 
   modifier preSaleActive() {
-    if (block.number < startBlock || block.number > endBlock) throw;
+    require(block.number >= startBlock && block.number < endBlock);
     _;
   }
 
   modifier preSaleEnded() {
-    if (block.number <= endBlock) throw;
+    require(block.number >= endBlock);
     _;
   }
 
@@ -72,11 +72,11 @@ contract JincorTokenPreSale is Ownable, Haltable {
   uint _startBlock,
   uint _endBlock
   ) {
-    hardCap = _hardCapUSD * 1 ether / _priceETH;
-    softCap = _softCapUSD * 1 ether / _priceETH;
-    price = _totalTokens * 1 ether / hardCap;
+    hardCap = _hardCapUSD.mul(1 ether).div(_priceETH);
+    softCap = _softCapUSD.mul(1 ether).div(_priceETH);
+    price = _totalTokens.mul(1 ether).div(hardCap);
 
-    purchaseLimit = ((_purchaseLimitUSD * 1 ether) / _priceETH) * price;
+    purchaseLimit = _purchaseLimitUSD.mul(1 ether).div(_priceETH).mul(price);
     token = JincorToken(_token);
     beneficiary = _beneficiary;
 
@@ -85,46 +85,46 @@ contract JincorTokenPreSale is Ownable, Haltable {
   }
 
   function() payable {
-    if (msg.value < 0.1 * 1 ether) throw;
+    require(msg.value >= 0.1 * 1 ether);
     doPurchase(msg.sender);
   }
 
   function refund() external preSaleEnded inNormalState {
-    if (softCapReached) throw;
-    if (refunded[msg.sender]) throw;
+    require(softCapReached == false);
+    require(refunded[msg.sender] == false);
 
     uint balance = token.balanceOf(msg.sender);
-    if (balance == 0) throw;
+    require(balance > 0);
 
-    uint refund = balance / price;
+    uint refund = balance.div(price);
     if (refund > this.balance) {
       refund = this.balance;
     }
 
-    if (!msg.sender.send(refund)) throw;
+    assert(msg.sender.send(refund));
     refunded[msg.sender] = true;
     weiRefunded = weiRefunded.add(refund);
     Refunded(msg.sender, refund);
   }
 
   function withdraw() onlyOwner {
-    if (!softCapReached) throw;
-    if (!beneficiary.send(collected)) throw;
+    require(softCapReached);
+    assert(beneficiary.send(collected));
     token.transfer(beneficiary, token.balanceOf(this));
     crowdsaleFinished = true;
   }
 
   function doPurchase(address _owner) private preSaleActive inNormalState {
 
-    assert(crowdsaleFinished == false);
-    if (collected.add(msg.value) > hardCap) throw;
+    require(!crowdsaleFinished);
+    require(collected.add(msg.value) <= hardCap);
 
     if (!softCapReached && collected < softCap && collected.add(msg.value) >= softCap) {
       softCapReached = true;
       SoftCapReached(softCap);
     }
     uint tokens = msg.value * price;
-    if (token.balanceOf(msg.sender) + tokens > purchaseLimit) throw;
+    require(token.balanceOf(msg.sender).add(tokens) <= purchaseLimit);
 
     if (token.balanceOf(msg.sender) == 0) investorCount++;
 
