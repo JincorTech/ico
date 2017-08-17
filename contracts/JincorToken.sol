@@ -1,14 +1,14 @@
 pragma solidity ^0.4.11;
 
-import "zeppelin-solidity/contracts/token/StandardToken.sol";
+import "./Burnable.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
  * @title JincorToken
  *
- * @dev Standard Ownable ERC20 token
+ * @dev Burnable Ownable ERC20 token
  */
-contract JincorToken is StandardToken, Ownable {
+contract JincorToken is Burnable, Ownable {
 
   string public name = "Jincor Token";
   string public symbol = "JCR";
@@ -29,29 +29,19 @@ contract JincorToken is StandardToken, Ownable {
    *
    */
   modifier canTransfer(address _sender) {
-
-    if (!released) {
-        if (!transferAgents[_sender]) {
-            throw;
-        }
-    }
-
+    require(transferAgents[_sender] || released);
     _;
   }
 
   /** The function can be called only before or after the tokens have been releasesd */
   modifier inReleaseState(bool releaseState) {
-    if (releaseState != released) {
-        throw;
-    }
+    require(releaseState == released);
     _;
   }
 
   /** The function can be called only by a whitelisted release agent. */
   modifier onlyReleaseAgent() {
-    if (msg.sender != releaseAgent) {
-        throw;
-    }
+    require(msg.sender == releaseAgent);
     _;
   }
 
@@ -88,12 +78,20 @@ contract JincorToken is StandardToken, Ownable {
   }
 
   function transfer(address _to, uint _value) canTransfer(msg.sender) returns (bool success) {
-    // Call StandardToken.transfer()
-   return super.transfer(_to, _value);
+    // Call Burnable.transfer()
+    return super.transfer(_to, _value);
   }
 
   function transferFrom(address _from, address _to, uint _value) canTransfer(_from) returns (bool success) {
-    // Call StandardToken.transferForm()
+    // Call Burnable.transferForm()
     return super.transferFrom(_from, _to, _value);
+  }
+
+  function burn(uint256 _value) onlyOwner returns (bool success) {
+    return super.burn(_value);
+  }
+
+  function burnFrom(address _from, uint256 _value) onlyOwner returns (bool success) {
+    return super.burnFrom(_from, _value);
   }
 }

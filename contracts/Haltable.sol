@@ -6,21 +6,21 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
  * Haltable
  *
  * Abstract contract that allows children to implement an
- * emergency stop mechanism. Differs from Pausable by causing a throw when in halt mode.
+ * emergency stop mechanism. Differs from Pausable by requiring a state.
  *
  *
  * Originally envisioned in FirstBlood ICO contract.
  */
 contract Haltable is Ownable {
-  bool public halted;
+  bool public halted = false;
 
   modifier inNormalState {
-    assert(!halted);
+    require(!halted);
     _;
   }
 
   modifier inEmergencyState {
-    assert(halted);
+    require(halted);
     _;
   }
 
@@ -33,5 +33,4 @@ contract Haltable is Ownable {
   function unhalt() external onlyOwner inEmergencyState {
     halted = false;
   }
-
 }

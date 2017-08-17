@@ -157,6 +157,33 @@ contract('JincorToken', function(accounts) {
     assert.equal(balance1.valueOf(), 100 * 10 ** 18);
   });
 
+  it("should not allow transfer to 0x0", async function() {
+    let token = await JincorToken.new();
+
+    await token.setTransferAgent(accounts[0], true);
+
+    try {
+      await token.transfer(0x0, 100 * 10 ** 18);
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it("should not allow transfer from to 0x0", async function() {
+    let token = await JincorToken.new();
+
+    await token.setTransferAgent(accounts[0], true);
+    await token.approve(accounts[1], 100 * 10 ** 18);
+
+    try {
+      await token.transferFrom(accounts[0], 0x0, 100 * 10 ** 18, {from: accounts[1]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
   it("should not allow transferFrom when token is not released and 'from' is not added to transferAgents map", async function() {
     let token = await JincorToken.new();
     await token.approve(accounts[1], 100 * 10 ** 18);
@@ -202,5 +229,90 @@ contract('JincorToken', function(accounts) {
 
     const balance2 = await token.balanceOf(accounts[1]);
     assert.equal(balance2.valueOf(), 0);
+  });
+
+  it("should allow to burn by owner", async function() {
+    let token = await JincorToken.new();
+    await token.burn(1000000 * 10 ** 18);
+
+    const balance = await token.balanceOf(accounts[0]).valueOf();
+    assert.equal(balance, 34000000 * 10 ** 18);
+
+    const supply = await token.totalSupply().valueOf();
+    assert.equal(supply, 34000000 * 10 ** 18);
+  });
+
+  it("should not allow to burn by not owner", async function() {
+    let token = await JincorToken.new();
+    await token.setTransferAgent(accounts[0], true);
+    await token.transfer(accounts[1], 1000000 * 10 ** 18);
+
+    try {
+      await token.burn(1000000 * 10 ** 18, {from: accounts[1]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it("should not allow to burn more than balance", async function() {
+    let token = await JincorToken.new();
+
+    try {
+      await token.burn(35000001 * 10 ** 18);
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it("should allow to burn from by owner", async function() {
+    let token = await JincorToken.new();
+    await token.setTransferAgent(accounts[0], true);
+    await token.transfer(accounts[1], 1000000 * 10 ** 18);
+    await token.approve(accounts[0], 500000 * 10 ** 18, {from: accounts[1]});
+    await token.burnFrom(accounts[1], 500000 * 10 ** 18);
+
+    const balance = await token.balanceOf(accounts[1]).valueOf();
+    assert.equal(balance, 500000 * 10 ** 18);
+
+    const supply = await token.totalSupply().valueOf();
+    assert.equal(supply, 34500000 * 10 ** 18);
+
+    //should not allow to burn more
+    try {
+      await token.burnFrom(accounts[1], 1);
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it("should not allow to burn from by not owner", async function() {
+    let token = await JincorToken.new();
+    await token.setTransferAgent(accounts[0], true);
+    await token.transfer(accounts[1], 1000000 * 10 ** 18);
+    await token.approve(accounts[2], 500000 * 10 ** 18, {from: accounts[1]});
+
+    try {
+      await token.burnFrom(accounts[1], 500000 * 10 ** 18, {from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it("should not allow to burn from more than balance", async function() {
+    let token = await JincorToken.new();
+    await token.setTransferAgent(accounts[0], true);
+    await token.transfer(accounts[1], 500000 * 10 ** 18);
+    await token.approve(accounts[0], 1000000 * 10 ** 18, {from: accounts[1]});
+
+    try {
+      await token.burnFrom(accounts[1], 500001 * 10 ** 18);
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
   });
 });
