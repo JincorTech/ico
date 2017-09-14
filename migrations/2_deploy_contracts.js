@@ -7,12 +7,11 @@ module.exports = function(deployer) {
   deployer.link(SafeMath, JincorToken);
   deployer.link(SafeMath, JincorTokenPreSale);
   deployer.deploy(JincorToken).then(function() {
-    const hardCap = web3.toWei(1372, "ether") * 255; //in USD
-    const softCap = 150000;
-    const price = web3.toWei(0.000980392158, "ether") * 255; //in USD
+    const hardCap = 350000; //in USD
+    const softCap = 150000; //in USD
     const token = JincorToken.address;
-    const totalTokens = web3.toWei(1400000, "ether");
-    const limit = 50000;
+    const totalTokens = 1400000; //NOT in wei, converted by contract
+    const limit = 50000; //in USD
     const beneficiary = web3.eth.accounts[0];
     const startBlock = web3.eth.blockNumber;
     const endBlock = web3.eth.blockNumber + 100;

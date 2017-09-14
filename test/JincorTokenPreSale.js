@@ -2,11 +2,11 @@ const JincorToken = artifacts.require("JincorToken");
 const JincorTokenPreSale = artifacts.require("JincorTokenPreSale");
 const assertJump = require("zeppelin-solidity/test/helpers/assertJump.js");
 
-const hardCap = 700 * 10 ** 18; //in USD
-const softCap = 500;
-const limit = 250;
+const hardCap = 700; //in USD
+const softCap = 500; //in USD
+const limit = 250; //in USD
 const beneficiary = web3.eth.accounts[0];
-const ethUsdPrice = 250;
+const ethUsdPrice = 250; //in USD
 
 async function advanceToBlock(number) {
   if (web3.eth.blockNumber > number) {
@@ -24,13 +24,15 @@ contract('JincorTokenPresale', function (accounts) {
     this.endBlock = web3.eth.blockNumber + 10;
 
     this.token = await JincorToken.new();
-    const totalTokens = web3.toWei(2800, "ether");
+    const totalTokens = 2800; //NOT in wei, converted by contract
 
     this.crowdsale = await JincorTokenPreSale.new(hardCap, softCap, this.token.address, beneficiary, totalTokens, ethUsdPrice, limit, this.startBlock, this.endBlock);
     this.token.setTransferAgent(this.token.address, true);
     this.token.setTransferAgent(this.crowdsale.address, true);
     this.token.setTransferAgent(accounts[0], true);
-    this.token.transfer(this.crowdsale.address, web3.toWei(2800, "ether"));
+
+    //transfer more than totalTokens to test hardcap reach properly
+    this.token.transfer(this.crowdsale.address, web3.toWei(5000, "ether"));
   });
 
   it('should allow to halt by owner', async function () {
@@ -97,7 +99,7 @@ contract('JincorTokenPresale', function (accounts) {
     assert.equal(balance.valueOf(), 1000 * 10 ** 18);
 
     const crowdsaleBalance = await this.token.balanceOf(this.crowdsale.address);
-    assert.equal(crowdsaleBalance.valueOf(), 1800 * 10 ** 18);
+    assert.equal(crowdsaleBalance.valueOf(), 4000 * 10 ** 18);
 
     const collected = await this.crowdsale.collected();
     assert.equal(collected.valueOf(), 1 * 10 ** 18);
@@ -164,7 +166,7 @@ contract('JincorTokenPresale', function (accounts) {
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[2]});
 
     try {
-      await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[3]});
+      await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[4]});
     } catch (error) {
       return assertJump(error);
     }
