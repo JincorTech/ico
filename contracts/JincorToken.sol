@@ -29,7 +29,7 @@ contract JincorToken is Burnable, Ownable {
    *
    */
   modifier canTransfer(address _sender) {
-    require(transferAgents[_sender] || released);
+    require(released || transferAgents[_sender]);
     _;
   }
 

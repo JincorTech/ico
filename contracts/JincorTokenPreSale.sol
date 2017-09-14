@@ -42,8 +42,6 @@ contract JincorTokenPreSale is Ownable, Haltable {
 
   mapping (address => bool) refunded;
 
-  event GoalReached(uint amountRaised);
-
   event SoftCapReached(uint softCap);
 
   event NewContribution(address indexed holder, uint256 tokenAmount, uint256 etherAmount);
@@ -135,9 +133,5 @@ contract JincorTokenPreSale is Ownable, Haltable {
     tokensSold = tokensSold.add(tokens);
 
     NewContribution(_owner, tokens, msg.value);
-
-    if (collected == hardCap) {
-      GoalReached(hardCap);
-    }
   }
 }
