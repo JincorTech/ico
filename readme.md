@@ -48,3 +48,10 @@ Important notes:
 2. JCR tokens transactions will be limited till ICO end to prevent trading before the ICO ends.
 3. During the pre-ICO ETH is accepted only from wallets compliant with ERC-20 token standard. (recommended to use: MyEtherWallet). Do not send ETH directly from cryptocurrency exchanges (Coinbase, Kraken, Poloniex etc.)!
 4. We'll send back all ETH in case of minimal cap is not collected.
+
+## How to run tests?
+
+1. Install Yarn if you don't have it: `sudo npm -g install yarn`. 
+2. Install project dependencies: `yarn install`.
+3. Run testrpc: `yarn run rpc`.
+4. Run tests in new terminal session: `yarn test` or `truffle test`.
