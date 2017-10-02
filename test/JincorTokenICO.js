@@ -2,10 +2,13 @@ const JincorToken = artifacts.require("JincorToken");
 const JincorTokenICO = artifacts.require("JincorTokenICO");
 const assertJump = require("zeppelin-solidity/test/helpers/assertJump.js");
 
-const hardCap = 26600000; //in USD
-const softCap = 2500000; //in USD
+const hardCap = 26600000; //in JCR
+const softCap = 2500000; //in JCR
 const beneficiary = web3.eth.accounts[9];
-const ethUsdPrice = 200; //in USD
+const ethUsdPrice = 20000; //in cents
+const btcUsdPrice = 400000; //in cents
+const ethPriceProvider = web3.eth.accounts[8];
+const btcPriceProvider = web3.eth.accounts[7];
 
 function advanceToBlock(number) {
   if (web3.eth.blockNumber > number) {
@@ -20,17 +23,19 @@ function advanceToBlock(number) {
 contract('JincorTokenICO', function (accounts) {
   beforeEach(async function () {
     this.startBlock = web3.eth.blockNumber;
-    this.endBlock = this.startBlock + 15;
+    this.endBlock = this.startBlock + 20;
 
     this.token = await JincorToken.new();
-    const totalTokens = 26600000; //NOT in wei, converted by contract
 
-    this.crowdsale = await JincorTokenICO.new(hardCap, softCap, this.token.address, beneficiary, totalTokens, ethUsdPrice, this.startBlock, this.endBlock);
+    this.crowdsale = await JincorTokenICO.new(hardCap, softCap, this.token.address, beneficiary, ethUsdPrice, btcUsdPrice, this.startBlock, this.endBlock);
     this.token.setTransferAgent(this.token.address, true);
     this.token.setTransferAgent(this.crowdsale.address, true);
     this.token.setTransferAgent(accounts[0], true);
 
-    //transfer more than totalTokens to test hardcap reach properly
+    await this.crowdsale.setEthPriceProvider(ethPriceProvider);
+    await this.crowdsale.setBtcPriceProvider(btcPriceProvider);
+
+    //transfer more than hardcap to test hardcap reach properly
     this.token.transfer(this.crowdsale.address, web3.toWei(30000000, "ether"));
   });
 
@@ -85,6 +90,92 @@ contract('JincorTokenICO', function (accounts) {
 
     try {
       await this.crowdsale.unhalt({from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should allow to update ETH price by ETH price provider', async function () {
+    await this.crowdsale.receiveEthPrice(25000, {from: ethPriceProvider});
+
+    const jcrEthRate = await this.crowdsale.jcrEthRate();
+
+    assert.equal(jcrEthRate, 250);
+  });
+
+  it('should allow to update BTC price by BTC price provider', async function () {
+    await this.crowdsale.receiveBtcPrice(420000, {from: btcPriceProvider});
+
+    const jcrUsdRate = await this.crowdsale.jcrBtcRate();
+
+    assert.equal(jcrUsdRate, 4200);
+  });
+
+  it('should not allow to update ETH price by not ETH price provider', async function () {
+    try {
+      await this.crowdsale.receiveEthPrice(25000, {from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should not allow to update BTC price by not BTC price provider', async function () {
+    try {
+      await this.crowdsale.receiveBtcPrice(420000, {from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should allow to set BTC price provider by owner', async function () {
+    await this.crowdsale.setBtcPriceProvider(accounts[2], {from: accounts[0]});
+
+    const newPriceProvider = await this.crowdsale.btcPriceProvider();
+
+    assert.equal(accounts[2], newPriceProvider);
+  });
+
+  it('should allow to set ETH price provider by owner', async function () {
+    await this.crowdsale.setEthPriceProvider(accounts[2], {from: accounts[0]});
+
+    const newPriceProvider = await this.crowdsale.ethPriceProvider();
+
+    assert.equal(accounts[2], newPriceProvider);
+  });
+
+  it('should not allow to set BTC price provider by not owner', async function () {
+    try {
+      await this.crowdsale.setBtcPriceProvider(accounts[2], {from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should not allow to set ETH price provider by not owner', async function () {
+    try {
+      await this.crowdsale.setEthPriceProvider(accounts[2], {from: accounts[2]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should not allow to update eth price with zero value', async function () {
+    try {
+      await this.crowdsale.receiveEthPrice(0, {from: ethPriceProvider});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
+  it('should not allow to update btc price with zero value', async function () {
+    try {
+      await this.crowdsale.receiveBtcPrice(0, {from: btcPriceProvider});
     } catch (error) {
       return assertJump(error);
     }
@@ -395,18 +486,16 @@ contract('JincorTokenICO', function (accounts) {
   });
 
   it('should set flag when softcap is reached', async function () {
-    //ICO softcap will be 12500 ETH if price is 200$
-    await this.crowdsale.sendTransaction({value: 12000 * 10 ** 18, from: accounts[1]});
-    await this.crowdsale.sendTransaction({value: 500 * 10 ** 18, from: accounts[2]});
+    //ICO softcap will be reached with single 10417 ETH investment due to high volume bonus
+    await this.crowdsale.sendTransaction({value: 10417 * 10 ** 18, from: accounts[1]});
 
     const softCapReached = await this.crowdsale.softCapReached();
     assert.equal(softCapReached, true);
   });
 
   it('should set flag when softcap is reached - referral purchase', async function () {
-    //ICO softcap will be 12500 ETH if price is 200$
-    await this.crowdsale.doPurchaseWithReferralBonus(accounts[3], {value: 12000 * 10 ** 18, from: accounts[1]});
-    await this.crowdsale.doPurchaseWithReferralBonus(accounts[3], {value: 500 * 10 ** 18, from: accounts[2]});
+    //ICO softcap will be reached with single 9843 ETH investment due to high volume and referral bonus
+    await this.crowdsale.doPurchaseWithReferralBonus(accounts[3], {value: 9843 * 10 ** 18, from: accounts[1]});
 
     const softCapReached = await this.crowdsale.softCapReached();
     assert.equal(softCapReached, true);

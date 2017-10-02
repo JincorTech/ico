@@ -7,7 +7,7 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./JincorToken.sol";
 
 
-contract JincorTokenPreSale is Ownable, Haltable {
+contract JincorTokenPreSale is Haltable {
   using SafeMath for uint;
 
   string public name = "Jincor Token PreSale";

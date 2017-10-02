@@ -5,9 +5,10 @@ import "./Haltable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./JincorToken.sol";
+import "./abstract/PriceReceiver.sol";
 
 
-contract JincorTokenICO is Ownable, Haltable {
+contract JincorTokenICO is Haltable, PriceReceiver {
   using SafeMath for uint;
 
   string public name = "Jincor Token ICO";
@@ -18,13 +19,19 @@ contract JincorTokenICO is Ownable, Haltable {
 
   address public preSaleAddress = 0x949C9B8dFf9b264CAD57F69Cd98ECa1338F05B39;
 
+  uint public jcrUsdRate = 100; //in cents
+
+  uint public jcrEthRate;
+
+  uint public jcrBtcRate;
+
   uint public hardCap;
 
   uint public softCap;
 
-  uint public price;
-
   uint public collected = 0;
+
+  uint public tokensSold = 0;
 
   uint public weiRefunded = 0;
 
@@ -65,29 +72,31 @@ contract JincorTokenICO is Ownable, Haltable {
   }
 
   function JincorTokenICO(
-    uint _hardCapUSD,
-    uint _softCapUSD,
+    uint _hardCapJCR,
+    uint _softCapJCR,
     address _token,
     address _beneficiary,
-    uint _totalTokens,
-    uint _priceETH,
+    uint _baseEthUsdPrice,
+    uint _baseBtcUsdPrice,
 
     uint _startBlock,
     uint _endBlock
   ) {
-    hardCap = _hardCapUSD.mul(1 ether).div(_priceETH);
-    softCap = _softCapUSD.mul(1 ether).div(_priceETH);
-    price = _totalTokens.mul(1 ether).div(hardCap);
+    hardCap = _hardCapJCR.mul(1 ether);
+    softCap = _softCapJCR.mul(1 ether);
 
     token = JincorToken(_token);
     beneficiary = _beneficiary;
 
     startBlock = _startBlock;
     endBlock = _endBlock;
+
+    jcrEthRate = _baseEthUsdPrice.div(jcrUsdRate);
+    jcrBtcRate = _baseBtcUsdPrice.div(jcrUsdRate);
   }
 
   function() payable minInvestment {
-    doPurchase(msg.sender);
+    doPurchase();
   }
 
   function refund() external icoEnded inNormalState {
@@ -162,6 +171,24 @@ contract JincorTokenICO is Ownable, Haltable {
     }
   }
 
+  function receiveEthPrice(uint ethUsdPrice) external onlyEthPriceProvider {
+    require(ethUsdPrice > 0);
+    jcrEthRate = ethUsdPrice.div(jcrUsdRate);
+  }
+
+  function receiveBtcPrice(uint btcUsdPrice) external onlyBtcPriceProvider {
+    require(btcUsdPrice > 0);
+    jcrBtcRate = btcUsdPrice.div(jcrUsdRate);
+  }
+
+  function setEthPriceProvider(address provider) external onlyOwner {
+    ethPriceProvider = provider;
+  }
+
+  function setBtcPriceProvider(address provider) external onlyOwner {
+    btcPriceProvider = provider;
+  }
+
   function doPurchaseWithReferralBonus(address referral)
   payable
   external
@@ -169,48 +196,58 @@ contract JincorTokenICO is Ownable, Haltable {
   inNormalState
   icoActive {
     require(!crowdsaleFinished);
-    require(collected.add(msg.value) <= hardCap);
     require(referral != msg.sender && referral != address(this) && referral != address(token) && referral != preSaleAddress);
 
-    if (!softCapReached && collected < softCap && collected.add(msg.value) >= softCap) {
-      softCapReached = true;
-      SoftCapReached(softCap);
-    }
-
-    uint256 tokens = msg.value.mul(price);
+    uint256 tokens = msg.value.mul(jcrEthRate);
     uint256 referralBonus = calculateReferralBonus(tokens);
 
     tokens = tokens.add(calculateBonus(tokens));
 
-    collected = collected.add(msg.value);
+    uint256 newTokensSold = tokensSold.add(tokens).add(referralBonus);
+
+    require(newTokensSold <= hardCap);
+
+    if (!softCapReached && tokensSold < softCap && newTokensSold >= softCap) {
+      softCapReached = true;
+      SoftCapReached(softCap);
+    }
 
     token.transfer(msg.sender, tokens);
     token.transfer(referral, referralBonus);
+
+    collected = collected.add(msg.value);
+
+    tokensSold = newTokensSold;
 
     deposited[msg.sender] = deposited[msg.sender].add(msg.value);
 
     NewContribution(msg.sender, tokens, msg.value);
   }
 
-  function doPurchase(address _owner) private icoActive inNormalState {
+  function doPurchase() private icoActive inNormalState {
     require(!crowdsaleFinished);
-    require(collected.add(msg.value) <= hardCap);
 
-    if (!softCapReached && collected < softCap && collected.add(msg.value) >= softCap) {
+    uint256 tokens = msg.value.mul(jcrEthRate);
+
+    tokens = tokens.add(calculateBonus(tokens));
+
+    uint256 newTokensSold = tokensSold.add(tokens);
+
+    require(newTokensSold <= hardCap);
+
+    if (!softCapReached && tokensSold < softCap && newTokensSold >= softCap) {
       softCapReached = true;
       SoftCapReached(softCap);
     }
 
-    uint256 tokens = msg.value.mul(price);
-
-    tokens = tokens.add(calculateBonus(tokens));
+    token.transfer(msg.sender, tokens);
 
     collected = collected.add(msg.value);
 
-    token.transfer(msg.sender, tokens);
+    tokensSold = newTokensSold;
 
-    deposited[_owner] = deposited[_owner].add(msg.value);
+    deposited[msg.sender] = deposited[msg.sender].add(msg.value);
 
-    NewContribution(_owner, tokens, msg.value);
+    NewContribution(msg.sender, tokens, msg.value);
   }
 }
