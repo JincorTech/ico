@@ -67,7 +67,7 @@ contract JincorTokenICO is Haltable, PriceReceiver {
   }
 
   modifier minReferralInvestment() {
-    require(msg.value >= 500 ether);
+    require(msg.value >= 100 ether);
     _;
   }
 
@@ -152,7 +152,15 @@ contract JincorTokenICO is Haltable, PriceReceiver {
   }
 
   function calculateReferralBonus(uint256 tokens) private returns (uint bonus) {
-    assert(msg.value >= 500 * (1 ether));
+    assert(msg.value >= 100 * (1 ether));
+
+    if (msg.value >= 100 * (1 ether) && msg.value < 250 * (1 ether)) {
+      return tokens.div(100).mul(3);
+    }
+
+    if (msg.value >= 250 * (1 ether) && msg.value < 500 * (1 ether)) {
+      return tokens.div(100).mul(4);
+    }
 
     if (msg.value >= 500 * (1 ether) && msg.value < 1000 * (1 ether)) {
       return tokens.div(100).mul(5);

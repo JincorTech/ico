@@ -275,10 +275,10 @@ contract('JincorTokenICO', function (accounts) {
     assert.equal(balanceOf3.valueOf(), 2400000 * 10 ** 18);
   });
 
-  it('should not allow to call referral purchase with less than 500 ETH investment', async function () {
+  it('should not allow to call referral purchase with less than 100 ETH investment', async function () {
     try {
       await this.crowdsale.doPurchaseWithReferralBonus(accounts[3], {
-        value: 499 * 10 ** 18,
+        value: 99.999999999 * 10 ** 18,
         from: accounts[2],
       });
     } catch (error) {
@@ -333,6 +333,70 @@ contract('JincorTokenICO', function (accounts) {
       return assertJump(error);
     }
     assert.fail('should have thrown before');
+  });
+
+  it('should send 3% referral bonus for 100-249 ETH investment', async function () {
+    await this.crowdsale.doPurchaseWithReferralBonus(accounts[3], {
+      value: 100 * 10 ** 18,
+      from: accounts[2],
+    });
+
+    //check that investor received proper tokens count
+    const balanceOf2 = await this.token.balanceOf(accounts[2]);
+    assert.equal(balanceOf2.valueOf(), 21000 * 10 ** 18);
+
+    //check that sender deposit was increased
+    const deposited = await this.crowdsale.deposited(accounts[2]);
+    assert.equal(deposited.toNumber(), 100 * 10 ** 18);
+
+    //check that correct referral bonus is received
+    const balanceOf3 = await this.token.balanceOf(accounts[3]);
+    assert.equal(balanceOf3.valueOf(), 600 * 10 ** 18);
+
+    await this.crowdsale.doPurchaseWithReferralBonus(accounts[5], {
+      value: 249 * 10 ** 18,
+      from: accounts[4],
+    });
+
+    //check that investor received proper tokens count
+    const balanceOf4 = await this.token.balanceOf(accounts[4]);
+    assert.equal(balanceOf4.valueOf(), 52290 * 10 ** 18);
+
+    //check that correct referral bonus is received
+    const balanceOf5 = await this.token.balanceOf(accounts[5]);
+    assert.equal(balanceOf5.valueOf(), 1494 * 10 ** 18);
+  });
+
+  it('should send 4% referral bonus for 250-499 ETH investment', async function () {
+    await this.crowdsale.doPurchaseWithReferralBonus(accounts[3], {
+      value: 250 * 10 ** 18,
+      from: accounts[2],
+    });
+
+    //check that investor received proper tokens count
+    const balanceOf2 = await this.token.balanceOf(accounts[2]);
+    assert.equal(balanceOf2.valueOf(), 53500 * 10 ** 18);
+
+    //check that sender deposit was increased
+    const deposited = await this.crowdsale.deposited(accounts[2]);
+    assert.equal(deposited.toNumber(), 250 * 10 ** 18);
+
+    //check that correct referral bonus is received
+    const balanceOf3 = await this.token.balanceOf(accounts[3]);
+    assert.equal(balanceOf3.valueOf(), 2000 * 10 ** 18);
+
+    await this.crowdsale.doPurchaseWithReferralBonus(accounts[5], {
+      value: 499 * 10 ** 18,
+      from: accounts[4],
+    });
+
+    //check that investor received proper tokens count
+    const balanceOf4 = await this.token.balanceOf(accounts[4]);
+    assert.equal(balanceOf4.valueOf(), 106786 * 10 ** 18);
+
+    //check that correct referral bonus is received
+    const balanceOf5 = await this.token.balanceOf(accounts[5]);
+    assert.equal(balanceOf5.valueOf(), 3992 * 10 ** 18);
   });
 
   it('should send 5% referral bonus for 500-999 ETH investment', async function () {
