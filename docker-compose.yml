@@ -1,0 +1,25 @@
+version: '2'
+services:
+
+  rpc:
+    build:
+      context: ./
+      dockerfile: rpc.Dockerfile
+    ports:
+      - 8545
+
+  oracle:
+    build:
+      context: ./
+      dockerfile: oracle.Dockerfile
+    depends_on:
+      - rpc
+
+  workspace:
+    build:
+      context: ./
+      dockerfile: workspace.Dockerfile
+    volumes:
+      - ./:/usr/src/workspace
+    depends_on:
+      - oracle

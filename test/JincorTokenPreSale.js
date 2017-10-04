@@ -8,13 +8,13 @@ const limit = 250; //in USD
 const beneficiary = web3.eth.accounts[0];
 const ethUsdPrice = 250; //in USD
 
-async function advanceToBlock(number) {
+function advanceToBlock(number) {
   if (web3.eth.blockNumber > number) {
     throw Error(`block number ${number} is in the past (current is ${web3.eth.blockNumber})`)
   }
 
   while (web3.eth.blockNumber < number) {
-    await web3.eth.sendTransaction({value: 1, from: web3.eth.accounts[8], to: web3.eth.accounts[7]});
+    web3.eth.sendTransaction({value: 1, from: web3.eth.accounts[8], to: web3.eth.accounts[7]});
   }
 }
 
@@ -161,6 +161,20 @@ contract('JincorTokenPresale', function (accounts) {
     assert.equal(softCapReached, true);
   });
 
+  it('should not allow purchase after withdraw', async function () {
+    await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[1]});
+    await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[2]});
+
+    await this.crowdsale.withdraw();
+
+    try {
+      await this.crowdsale.sendTransaction({value: 0.11 * 10 ** 18, from: accounts[3]});
+    } catch (error) {
+      return assertJump(error);
+    }
+    assert.fail('should have thrown before');
+  });
+
   it('should not allow to exceed hard cap', async function () {
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[1]});
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[2]});
@@ -174,6 +188,9 @@ contract('JincorTokenPresale', function (accounts) {
   });
 
   it('should allow withdraw only for owner', async function () {
+    await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[1]});
+    await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[2]});
+
     try {
       await this.crowdsale.withdraw({from: accounts[1]});
     } catch (error) {
@@ -239,10 +256,10 @@ contract('JincorTokenPresale', function (accounts) {
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[1]});
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[3]});
 
-    await advanceToBlock(this.endBlock);
+    advanceToBlock(this.endBlock);
 
     try {
-      await this.crowdsale.refund({from: accounts[2]});
+      await this.crowdsale.refund({from: accounts[3]});
     } catch (error) {
       return assertJump(error);
     }
@@ -252,7 +269,7 @@ contract('JincorTokenPresale', function (accounts) {
   it('should not allow refund if pre sale is halted', async function () {
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[1]});
 
-    await advanceToBlock(this.endBlock);
+    advanceToBlock(this.endBlock);
 
     await this.crowdsale.halt();
 
@@ -267,7 +284,7 @@ contract('JincorTokenPresale', function (accounts) {
   it('should refund if cap is not reached and pre sale is ended', async function () {
     await this.crowdsale.sendTransaction({value: 0.1 * 10 ** 18, from: accounts[2]});
 
-    await advanceToBlock(this.endBlock);
+    advanceToBlock(this.endBlock);
 
     const balanceBefore = web3.eth.getBalance(accounts[2]);
     await this.crowdsale.refund({from: accounts[2]});

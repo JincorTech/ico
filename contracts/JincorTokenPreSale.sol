@@ -7,7 +7,7 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./JincorToken.sol";
 
 
-contract JincorTokenPreSale is Ownable, Haltable {
+contract JincorTokenPreSale is Haltable {
   using SafeMath for uint;
 
   string public name = "Jincor Token PreSale";
@@ -59,16 +59,16 @@ contract JincorTokenPreSale is Ownable, Haltable {
   }
 
   function JincorTokenPreSale(
-  uint _hardCapUSD,
-  uint _softCapUSD,
-  address _token,
-  address _beneficiary,
-  uint _totalTokens,
-  uint _priceETH,
-  uint _purchaseLimitUSD,
+    uint _hardCapUSD,
+    uint _softCapUSD,
+    address _token,
+    address _beneficiary,
+    uint _totalTokens,
+    uint _priceETH,
+    uint _purchaseLimitUSD,
 
-  uint _startBlock,
-  uint _endBlock
+    uint _startBlock,
+    uint _endBlock
   ) {
     hardCap = _hardCapUSD.mul(1 ether).div(_priceETH);
     softCap = _softCapUSD.mul(1 ether).div(_priceETH);
@@ -121,7 +121,8 @@ contract JincorTokenPreSale is Ownable, Haltable {
       softCapReached = true;
       SoftCapReached(softCap);
     }
-    uint tokens = msg.value * price;
+
+    uint tokens = msg.value.mul(price);
     require(token.balanceOf(msg.sender).add(tokens) <= purchaseLimit);
 
     if (token.balanceOf(msg.sender) == 0) investorCount++;
