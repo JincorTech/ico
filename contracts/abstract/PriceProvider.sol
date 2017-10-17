@@ -18,7 +18,7 @@ contract PriceProvider is Ownable, usingOraclize {
 
   State public state = State.Stopped;
 
-  function notifyWatcher() private;
+  function notifyWatcher() internal;
 
   modifier inActiveState() {
     require(state == State.Active);
@@ -64,8 +64,10 @@ contract PriceProvider is Ownable, usingOraclize {
 
   function __callback(bytes32 myid, string result, bytes proof) {
     require(msg.sender == oraclize_cbAddress() && validIds[myid]);
-    currentPrice = parseInt(result, 2);
-    assert(currentPrice > 0);
+    uint newPrice = parseInt(result, 2);
+    require(newPrice > 0);
+    currentPrice = newPrice;
+
     if (state == State.Active) {
       notifyWatcher();
       update(updateInterval);
@@ -86,6 +88,6 @@ contract PriceProvider is Ownable, usingOraclize {
   //we need to get back our funds if we don't need this oracle anymore
   function withdraw(address receiver) external onlyOwner inStoppedState {
     require(receiver != 0x0);
-    require(receiver.send(this.balance));
+    receiver.transfer(this.balance);
   }
 }

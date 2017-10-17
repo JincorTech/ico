@@ -10,10 +10,10 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
  */
 contract JincorToken is Burnable, Ownable {
 
-  string public name = "Jincor Token";
-  string public symbol = "JCR";
-  uint256 public decimals = 18;
-  uint256 public INITIAL_SUPPLY = 35000000 * 1 ether;
+  string public constant name = "Jincor Token";
+  string public constant symbol = "JCR";
+  uint8 public constant decimals = 18;
+  uint public constant INITIAL_SUPPLY = 35000000 * 1 ether;
 
   /* The finalizer contract that allows unlift the transfer limits on this token */
   address public releaseAgent;
@@ -61,6 +61,7 @@ contract JincorToken is Burnable, Ownable {
    * Design choice. Allow reset the release agent to fix fat finger mistakes.
    */
   function setReleaseAgent(address addr) onlyOwner inReleaseState(false) public {
+    require(addr != 0x0);
 
     // We don't do interface check here as we might want to a normal wallet address to act as a release agent
     releaseAgent = addr;
@@ -74,6 +75,7 @@ contract JincorToken is Burnable, Ownable {
    * Owner can allow a particular address (a crowdsale contract) to transfer tokens despite the lock up period.
    */
   function setTransferAgent(address addr, bool state) onlyOwner inReleaseState(false) public {
+    require(addr != 0x0);
     transferAgents[addr] = state;
   }
 
@@ -87,11 +89,11 @@ contract JincorToken is Burnable, Ownable {
     return super.transferFrom(_from, _to, _value);
   }
 
-  function burn(uint256 _value) onlyOwner returns (bool success) {
+  function burn(uint _value) onlyOwner returns (bool success) {
     return super.burn(_value);
   }
 
-  function burnFrom(address _from, uint256 _value) onlyOwner returns (bool success) {
+  function burnFrom(address _from, uint _value) onlyOwner returns (bool success) {
     return super.burnFrom(_from, _value);
   }
 }

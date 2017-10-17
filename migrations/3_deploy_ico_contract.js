@@ -3,6 +3,7 @@ var JincorToken = artifacts.require("./JincorToken.sol");
 var JincorTokenICO = artifacts.require("./JincorTokenICO.sol");
 var EthPriceProvider = artifacts.require("./EthPriceProvider.sol");
 var BtcPriceProvider = artifacts.require("./BtcPriceProvider.sol");
+var InvestorWhiteList = artifacts.require("./InvestorWhiteList.sol");
 
 module.exports = function(deployer) {
   deployer.deploy(SafeMath);
@@ -15,7 +16,8 @@ module.exports = function(deployer) {
     const beneficiary = web3.eth.accounts[0];
     const startBlock = web3.eth.blockNumber;
     const endBlock = web3.eth.blockNumber + 2000;
-    await deployer.deploy(JincorTokenICO, hardCap, softCap, token, beneficiary, 25500, 420000, startBlock, endBlock);
+    await deployer.deploy(InvestorWhiteList);
+    await deployer.deploy(JincorTokenICO, hardCap, softCap, token, beneficiary, InvestorWhiteList.address, 25500, 420000, startBlock, endBlock);
     await deployer.deploy(EthPriceProvider);
     await deployer.deploy(BtcPriceProvider);
 

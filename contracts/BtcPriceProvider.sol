@@ -6,7 +6,7 @@ contract BtcPriceProvider is PriceProvider {
 
   }
 
-  function notifyWatcher() private {
+  function notifyWatcher() internal {
     watcher.receiveBtcPrice(currentPrice);
   }
 }
