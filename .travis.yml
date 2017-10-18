@@ -1,0 +1,13 @@
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - docker-compose build
+  - docker-compose up -d
+  - docker-compose ps
+
+script:
+  - docker-compose run --rm workspace yarn
+  - docker-compose run --rm workspace
