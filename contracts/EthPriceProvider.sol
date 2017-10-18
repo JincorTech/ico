@@ -6,7 +6,7 @@ contract EthPriceProvider is PriceProvider {
 
   }
 
-  function notifyWatcher() private {
+  function notifyWatcher() internal {
     watcher.receiveEthPrice(currentPrice);
   }
 }

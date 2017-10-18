@@ -5,21 +5,24 @@ import "./Haltable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./JincorToken.sol";
+import "./InvestorWhiteList.sol";
 import "./abstract/PriceReceiver.sol";
 
 
 contract JincorTokenICO is Haltable, PriceReceiver {
   using SafeMath for uint;
 
-  string public name = "Jincor Token ICO";
+  string public constant name = "Jincor Token ICO";
 
   JincorToken public token;
 
   address public beneficiary;
 
-  address public preSaleAddress = 0x949C9B8dFf9b264CAD57F69Cd98ECa1338F05B39;
+  address public constant preSaleAddress = 0x949C9B8dFf9b264CAD57F69Cd98ECa1338F05B39;
 
-  uint public jcrUsdRate = 100; //in cents
+  InvestorWhiteList public investorWhiteList;
+
+  uint public constant jcrUsdRate = 100; //in cents
 
   uint public jcrEthRate;
 
@@ -43,13 +46,13 @@ contract JincorTokenICO is Haltable, PriceReceiver {
 
   bool public crowdsaleFinished = false;
 
-  mapping (address => uint256) public deposited;
+  mapping (address => uint) public deposited;
 
   event SoftCapReached(uint softCap);
 
-  event NewContribution(address indexed holder, uint256 tokenAmount, uint256 etherAmount);
+  event NewContribution(address indexed holder, uint tokenAmount, uint etherAmount);
 
-  event Refunded(address indexed holder, uint256 amount);
+  event Refunded(address indexed holder, uint amount);
 
   modifier icoActive() {
     require(block.number >= startBlock && block.number < endBlock);
@@ -66,8 +69,8 @@ contract JincorTokenICO is Haltable, PriceReceiver {
     _;
   }
 
-  modifier minReferralInvestment() {
-    require(msg.value >= 100 ether);
+  modifier inWhiteList() {
+    require(investorWhiteList.isAllowed(msg.sender));
     _;
   }
 
@@ -76,6 +79,7 @@ contract JincorTokenICO is Haltable, PriceReceiver {
     uint _softCapJCR,
     address _token,
     address _beneficiary,
+    address _investorWhiteList,
     uint _baseEthUsdPrice,
     uint _baseBtcUsdPrice,
 
@@ -87,6 +91,7 @@ contract JincorTokenICO is Haltable, PriceReceiver {
 
     token = JincorToken(_token);
     beneficiary = _beneficiary;
+    investorWhiteList = InvestorWhiteList(_investorWhiteList);
 
     startBlock = _startBlock;
     endBlock = _endBlock;
@@ -95,7 +100,7 @@ contract JincorTokenICO is Haltable, PriceReceiver {
     jcrBtcRate = _baseBtcUsdPrice.div(jcrUsdRate);
   }
 
-  function() payable minInvestment {
+  function() payable minInvestment inWhiteList {
     doPurchase();
   }
 
@@ -103,25 +108,25 @@ contract JincorTokenICO is Haltable, PriceReceiver {
     require(softCapReached == false);
     require(deposited[msg.sender] > 0);
 
-    uint256 refund = deposited[msg.sender];
+    uint refund = deposited[msg.sender];
     if (refund > this.balance) {
       refund = this.balance;
     }
 
-    assert(msg.sender.send(refund));
+    msg.sender.transfer(refund);
     deposited[msg.sender] = 0;
     weiRefunded = weiRefunded.add(refund);
     Refunded(msg.sender, refund);
   }
 
-  function withdraw() onlyOwner {
+  function withdraw() external onlyOwner {
     require(softCapReached);
-    assert(beneficiary.send(collected));
+    beneficiary.transfer(collected);
     token.transfer(beneficiary, token.balanceOf(this));
     crowdsaleFinished = true;
   }
 
-  function calculateBonus(uint256 tokens) private returns (uint bonus) {
+  function calculateBonus(uint tokens) internal constant returns (uint bonus) {
     if (msg.value < 100 * (1 ether)) {
       return 0;
     }
@@ -151,8 +156,10 @@ contract JincorTokenICO is Haltable, PriceReceiver {
     }
   }
 
-  function calculateReferralBonus(uint256 tokens) private returns (uint bonus) {
-    assert(msg.value >= 100 * (1 ether));
+  function calculateReferralBonus(uint tokens) internal constant returns (uint bonus) {
+    if (msg.value < 100 * (1 ether)) {
+      return 0;
+    }
 
     if (msg.value >= 100 * (1 ether) && msg.value < 250 * (1 ether)) {
       return tokens.div(100).mul(3);
@@ -190,56 +197,29 @@ contract JincorTokenICO is Haltable, PriceReceiver {
   }
 
   function setEthPriceProvider(address provider) external onlyOwner {
+    require(provider != 0x0);
     ethPriceProvider = provider;
   }
 
   function setBtcPriceProvider(address provider) external onlyOwner {
+    require(provider != 0x0);
     btcPriceProvider = provider;
   }
 
-  function doPurchaseWithReferralBonus(address referral)
-  payable
-  external
-  minReferralInvestment
-  inNormalState
-  icoActive {
-    require(!crowdsaleFinished);
-    require(referral != msg.sender && referral != address(this) && referral != address(token) && referral != preSaleAddress);
-
-    uint256 tokens = msg.value.mul(jcrEthRate);
-    uint256 referralBonus = calculateReferralBonus(tokens);
-
-    tokens = tokens.add(calculateBonus(tokens));
-
-    uint256 newTokensSold = tokensSold.add(tokens).add(referralBonus);
-
-    require(newTokensSold <= hardCap);
-
-    if (!softCapReached && tokensSold < softCap && newTokensSold >= softCap) {
-      softCapReached = true;
-      SoftCapReached(softCap);
-    }
-
-    token.transfer(msg.sender, tokens);
-    token.transfer(referral, referralBonus);
-
-    collected = collected.add(msg.value);
-
-    tokensSold = newTokensSold;
-
-    deposited[msg.sender] = deposited[msg.sender].add(msg.value);
-
-    NewContribution(msg.sender, tokens, msg.value);
+  function setNewWhiteList(address newWhiteList) external onlyOwner {
+    require(newWhiteList != 0x0);
+    investorWhiteList = InvestorWhiteList(newWhiteList);
   }
 
   function doPurchase() private icoActive inNormalState {
     require(!crowdsaleFinished);
 
-    uint256 tokens = msg.value.mul(jcrEthRate);
+    uint tokens = msg.value.mul(jcrEthRate);
+    uint referralBonus = calculateReferralBonus(tokens);
 
     tokens = tokens.add(calculateBonus(tokens));
 
-    uint256 newTokensSold = tokensSold.add(tokens);
+    uint newTokensSold = tokensSold.add(tokens).add(referralBonus);
 
     require(newTokensSold <= hardCap);
 
@@ -250,6 +230,13 @@ contract JincorTokenICO is Haltable, PriceReceiver {
 
     token.transfer(msg.sender, tokens);
 
+    if (referralBonus > 0) {
+      address referral = investorWhiteList.getReferralOf(msg.sender);
+      if (referral != 0x0) {
+        token.transfer(referral, referralBonus);
+      }
+    }
+
     collected = collected.add(msg.value);
 
     tokensSold = newTokensSold;
@@ -257,5 +244,9 @@ contract JincorTokenICO is Haltable, PriceReceiver {
     deposited[msg.sender] = deposited[msg.sender].add(msg.value);
 
     NewContribution(msg.sender, tokens, msg.value);
+  }
+
+  function transferOwnership(address newOwner) onlyOwner icoEnded {
+    super.transferOwnership(newOwner);
   }
 }

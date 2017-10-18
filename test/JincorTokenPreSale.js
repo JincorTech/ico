@@ -21,7 +21,7 @@ function advanceToBlock(number) {
 contract('JincorTokenPresale', function (accounts) {
   beforeEach(async function () {
     this.startBlock = web3.eth.blockNumber;
-    this.endBlock = web3.eth.blockNumber + 10;
+    this.endBlock = web3.eth.blockNumber + 15;
 
     this.token = await JincorToken.new();
     const totalTokens = 2800; //NOT in wei, converted by contract

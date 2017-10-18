@@ -10,7 +10,7 @@ import "./JincorToken.sol";
 contract JincorTokenPreSale is Haltable {
   using SafeMath for uint;
 
-  string public name = "Jincor Token PreSale";
+  string public constant name = "Jincor Token PreSale";
 
   JincorToken public token;
 
@@ -44,9 +44,9 @@ contract JincorTokenPreSale is Haltable {
 
   event SoftCapReached(uint softCap);
 
-  event NewContribution(address indexed holder, uint256 tokenAmount, uint256 etherAmount);
+  event NewContribution(address indexed holder, uint tokenAmount, uint etherAmount);
 
-  event Refunded(address indexed holder, uint256 amount);
+  event Refunded(address indexed holder, uint amount);
 
   modifier preSaleActive() {
     require(block.number >= startBlock && block.number < endBlock);
@@ -99,21 +99,20 @@ contract JincorTokenPreSale is Haltable {
       refund = this.balance;
     }
 
-    assert(msg.sender.send(refund));
+    msg.sender.transfer(refund);
     refunded[msg.sender] = true;
     weiRefunded = weiRefunded.add(refund);
     Refunded(msg.sender, refund);
   }
 
-  function withdraw() onlyOwner {
+  function withdraw() external onlyOwner {
     require(softCapReached);
-    assert(beneficiary.send(collected));
+    beneficiary.transfer(collected);
     token.transfer(beneficiary, token.balanceOf(this));
     crowdsaleFinished = true;
   }
 
   function doPurchase(address _owner) private preSaleActive inNormalState {
-
     require(!crowdsaleFinished);
     require(collected.add(msg.value) <= hardCap);
 
