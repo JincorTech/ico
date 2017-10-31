@@ -266,6 +266,27 @@ contract('JincorTokenICO', function (accounts) {
     assert.equal(balanceOf3.valueOf(), 0);
   });
 
+  it('should not add referral bonus to tokensSold if no referral of investor', async function () {
+    await this.whiteList.addInvestorToWhiteList(accounts[2]);
+
+    await this.crowdsale.sendTransaction({
+      value: 100 * 10 ** 18,
+      from: accounts[2],
+    });
+
+    //check that investor received proper tokens count
+    const balanceOf2 = await this.token.balanceOf(accounts[2]);
+    assert.equal(balanceOf2.valueOf(), 21000 * 10 ** 18);
+
+    //check that sender deposit was increased
+    const deposited = await this.crowdsale.deposited(accounts[2]);
+    assert.equal(deposited.toNumber(), 100 * 10 ** 18);
+
+    //check that tokensSold is correct
+    const tokensSold = await this.crowdsale.tokensSold();
+    assert.equal(tokensSold.toNumber(), 21000 * 10 ** 18);
+  });
+
   it('should add 5% bonus and send 3% referral bonus for 100-249 ETH investment', async function () {
     await this.whiteList.addInvestorToListReferral(accounts[2], accounts[3]);
     await this.whiteList.addInvestorToListReferral(accounts[4], accounts[5]);
@@ -287,6 +308,10 @@ contract('JincorTokenICO', function (accounts) {
     const balanceOf3 = await this.token.balanceOf(accounts[3]);
     assert.equal(balanceOf3.valueOf(), 600 * 10 ** 18);
 
+    //check that tokensSold is correct
+    const tokensSold1 = await this.crowdsale.tokensSold();
+    assert.equal(tokensSold1.toNumber(), 21600 * 10 ** 18);
+
     await this.crowdsale.sendTransaction({
       value: 249 * 10 ** 18,
       from: accounts[4],
@@ -299,6 +324,10 @@ contract('JincorTokenICO', function (accounts) {
     //check that correct referral bonus is received
     const balanceOf5 = await this.token.balanceOf(accounts[5]);
     assert.equal(balanceOf5.valueOf(), 1494 * 10 ** 18);
+
+    //check that tokensSold is correct
+    const tokensSold2 = await this.crowdsale.tokensSold();
+    assert.equal(tokensSold2.toNumber(), 75384 * 10 ** 18);
   });
 
   it('should add 7% bonus and send 4% referral bonus for 250-499 ETH investment', async function () {

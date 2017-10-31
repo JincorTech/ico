@@ -19,6 +19,7 @@ services:
     build:
       context: ./
       dockerfile: workspace.Dockerfile
+    tty: true
     volumes:
       - ./:/usr/src/workspace
     depends_on:

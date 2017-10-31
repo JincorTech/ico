@@ -30,11 +30,11 @@ contract InvestorWhiteList is Ownable {
     investorWhiteList[investor].referral = referral;
   }
 
-  function isAllowed(address investor) external returns (bool result) {
+  function isAllowed(address investor) constant external returns (bool result) {
     return investorWhiteList[investor].allowed;
   }
 
-  function getReferralOf(address investor) external returns (address result) {
+  function getReferralOf(address investor) constant external returns (address result) {
     return investorWhiteList[investor].referral;
   }
 }

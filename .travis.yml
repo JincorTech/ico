@@ -5,9 +5,11 @@ services:
 
 before_install:
   - docker-compose build
-  - docker-compose up -d
-  - docker-compose ps
 
 script:
-  - docker-compose run --rm workspace yarn
-  - docker-compose run --rm workspace
+#wait for 1 minute first as oracle container need to deploy connector contracts
+  - docker-compose run --rm workspace sh -c "sleep 60 && yarn && truffle test"
+  - docker-compose down
+notifications:
+  slack:
+    secure: KfTgWBeQa55Gad9ULcDbnyat24eayLgR57HcO7P2mX2T93DuHmXC0WEiZlAwY+Uq2AFxedF3/DX5sh5DYcwCFlTztP4OyHOl1+f5iRMQugvUQmisH2lhwbMY0D7jCDjEDFf7XPVAxusx3I7gFPZbkG1bXZLzEMsmLhz7lr1BHRcoApcaQ9cJ+tjNgGMsfqqQjjlqeuNM5BqrYREble/8IGZutTxtSzQeroFWifiIBEAwTiL1f+0jFgZHApOpofQl8Qe0M+JOmSUO5coW9F++s7nVieyccceL/cVtR0pTmy8VFX/M2ppnBZYPGmgERp40wydnX4QMmfkc7FQScdswaZqViGYnSGd/nvOjjGwQICoW6+1bcNPkfFYNn6Vsd2VTHtGgxkSxVTVjPhXqR1iTJp3Jl00VdubPzAVqzvaw6/ZWjANPD8+YlQ1KRLkXN515wK7R84vzYJmLJ6Ndh1t1cq6lBCcHfo2QIZh19keuxKZqL52dgEHNBCJ/txjhGNkI5/6oOpAMZrZfuwy4Ln8bq3DUzpRa6hn8jN/rxzcj6M04zJLp8gIJB27SIiOvD2EJtlEwzUxq3PsUIvcWTFF/9MrmMK7lCVoL4LCV2TVAFq8eVxB84OYJY9DtXgFMdiS7xUMph4M23T66w3e7mWMmGTI5D1zyw8WawFzCOnyH378=
