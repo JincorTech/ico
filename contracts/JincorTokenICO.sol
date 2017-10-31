@@ -52,6 +52,8 @@ contract JincorTokenICO is Haltable, PriceReceiver {
 
   event NewContribution(address indexed holder, uint tokenAmount, uint etherAmount);
 
+  event NewReferralTransfer(address indexed investor, address indexed referral, uint tokenAmount);
+
   event Refunded(address indexed holder, uint amount);
 
   modifier icoActive() {
@@ -109,12 +111,10 @@ contract JincorTokenICO is Haltable, PriceReceiver {
     require(deposited[msg.sender] > 0);
 
     uint refund = deposited[msg.sender];
-    if (refund > this.balance) {
-      refund = this.balance;
-    }
 
-    msg.sender.transfer(refund);
     deposited[msg.sender] = 0;
+    msg.sender.transfer(refund);
+
     weiRefunded = weiRefunded.add(refund);
     Refunded(msg.sender, refund);
   }
@@ -216,10 +216,15 @@ contract JincorTokenICO is Haltable, PriceReceiver {
 
     uint tokens = msg.value.mul(jcrEthRate);
     uint referralBonus = calculateReferralBonus(tokens);
+    address referral = investorWhiteList.getReferralOf(msg.sender);
 
     tokens = tokens.add(calculateBonus(tokens));
 
-    uint newTokensSold = tokensSold.add(tokens).add(referralBonus);
+    uint newTokensSold = tokensSold.add(tokens);
+
+    if (referralBonus > 0 && referral != 0x0) {
+      newTokensSold = newTokensSold.add(referralBonus);
+    }
 
     require(newTokensSold <= hardCap);
 
@@ -228,22 +233,19 @@ contract JincorTokenICO is Haltable, PriceReceiver {
       SoftCapReached(softCap);
     }
 
-    token.transfer(msg.sender, tokens);
-
-    if (referralBonus > 0) {
-      address referral = investorWhiteList.getReferralOf(msg.sender);
-      if (referral != 0x0) {
-        token.transfer(referral, referralBonus);
-      }
-    }
-
     collected = collected.add(msg.value);
 
     tokensSold = newTokensSold;
 
     deposited[msg.sender] = deposited[msg.sender].add(msg.value);
 
+    token.transfer(msg.sender, tokens);
     NewContribution(msg.sender, tokens, msg.value);
+
+    if (referralBonus > 0 && referral != 0x0) {
+      token.transfer(referral, referralBonus);
+      NewReferralTransfer(msg.sender, referral, referralBonus);
+    }
   }
 
   function transferOwnership(address newOwner) onlyOwner icoEnded {

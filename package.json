@@ -1,12 +1,14 @@
 {
   "scripts": {
     "rpc": "node startRPC.js",
-    "test": "truffle test"
+    "test": "truffle test",
+    "merge": "node node_modules/sol-merger/bin/sol-merger.js './contracts/*.sol' ./merge"
   },
   "dependencies": {
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "ethereumjs-testrpc": "^4.1.3",
+    "sol-merger": "^0.1.0",
     "zeppelin-solidity": "^1.2.0"
   }
 }
