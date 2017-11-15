@@ -1,13 +1,11 @@
 pragma solidity ^0.4.11;
 
-
 import "./Haltable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./JincorToken.sol";
 import "./InvestorWhiteList.sol";
 import "./abstract/PriceReceiver.sol";
-
 
 contract JincorTokenICO is Haltable, PriceReceiver {
   using SafeMath for uint;
@@ -24,9 +22,9 @@ contract JincorTokenICO is Haltable, PriceReceiver {
 
   uint public constant jcrUsdRate = 100; //in cents
 
-  uint public jcrEthRate;
+  uint public ethUsdRate;
 
-  uint public jcrBtcRate;
+  uint public btcUsdRate;
 
   uint public hardCap;
 
@@ -47,6 +45,18 @@ contract JincorTokenICO is Haltable, PriceReceiver {
   bool public crowdsaleFinished = false;
 
   mapping (address => uint) public deposited;
+
+  uint constant VOLUME_20_REF_7 = 5000 ether;
+
+  uint constant VOLUME_15_REF_6 = 2000 ether;
+
+  uint constant VOLUME_12d5_REF_5d5 = 1000 ether;
+
+  uint constant VOLUME_10_REF_5 = 500 ether;
+
+  uint constant VOLUME_7_REF_4 = 250 ether;
+
+  uint constant VOLUME_5_REF_3 = 100 ether;
 
   event SoftCapReached(uint softCap);
 
@@ -98,15 +108,15 @@ contract JincorTokenICO is Haltable, PriceReceiver {
     startBlock = _startBlock;
     endBlock = _endBlock;
 
-    jcrEthRate = _baseEthUsdPrice.div(jcrUsdRate);
-    jcrBtcRate = _baseBtcUsdPrice.div(jcrUsdRate);
+    ethUsdRate = _baseEthUsdPrice;
+    btcUsdRate = _baseBtcUsdPrice;
   }
 
   function() payable minInvestment inWhiteList {
     doPurchase();
   }
 
-  function refund() external icoEnded inNormalState {
+  function refund() external icoEnded {
     require(softCapReached == false);
     require(deposited[msg.sender] > 0);
 
@@ -127,73 +137,69 @@ contract JincorTokenICO is Haltable, PriceReceiver {
   }
 
   function calculateBonus(uint tokens) internal constant returns (uint bonus) {
-    if (msg.value < 100 * (1 ether)) {
-      return 0;
+    if (msg.value >= VOLUME_20_REF_7) {
+      return tokens.mul(20).div(100);
     }
 
-    if (msg.value >= 100 * (1 ether) && msg.value < 250 * (1 ether)) {
-      return tokens.div(100).mul(5);
+    if (msg.value >= VOLUME_15_REF_6) {
+      return tokens.mul(15).div(100);
     }
 
-    if (msg.value >= 250 * (1 ether) && msg.value < 500 * (1 ether)) {
-      return tokens.div(100).mul(7);
+    if (msg.value >= VOLUME_12d5_REF_5d5) {
+      return tokens.mul(125).div(1000);
     }
 
-    if (msg.value >= 500 * (1 ether) && msg.value < 1000 * (1 ether)) {
-      return tokens.div(100).mul(10);
+    if (msg.value >= VOLUME_10_REF_5) {
+      return tokens.mul(10).div(100);
     }
 
-    if (msg.value >= 1000 * (1 ether) && msg.value < 2000 * (1 ether)) {
-      return tokens.div(1000).mul(125);
+    if (msg.value >= VOLUME_7_REF_4) {
+      return tokens.mul(7).div(100);
     }
 
-    if (msg.value >= 2000 * (1 ether) && msg.value < 5000 * (1 ether)) {
-      return tokens.div(100).mul(15);
+    if (msg.value >= VOLUME_5_REF_3) {
+      return tokens.mul(5).div(100);
     }
 
-    if (msg.value >= 5000 * (1 ether)) {
-      return tokens.div(100).mul(20);
-    }
+    return 0;
   }
 
   function calculateReferralBonus(uint tokens) internal constant returns (uint bonus) {
-    if (msg.value < 100 * (1 ether)) {
-      return 0;
+    if (msg.value >= VOLUME_20_REF_7) {
+      return tokens.mul(7).div(100);
     }
 
-    if (msg.value >= 100 * (1 ether) && msg.value < 250 * (1 ether)) {
-      return tokens.div(100).mul(3);
+    if (msg.value >= VOLUME_15_REF_6) {
+      return tokens.mul(6).div(100);
     }
 
-    if (msg.value >= 250 * (1 ether) && msg.value < 500 * (1 ether)) {
-      return tokens.div(100).mul(4);
+    if (msg.value >= VOLUME_12d5_REF_5d5) {
+      return tokens.mul(55).div(1000);
     }
 
-    if (msg.value >= 500 * (1 ether) && msg.value < 1000 * (1 ether)) {
-      return tokens.div(100).mul(5);
+    if (msg.value >= VOLUME_10_REF_5) {
+      return tokens.mul(5).div(100);
     }
 
-    if (msg.value >= 1000 * (1 ether) && msg.value < 2000 * (1 ether)) {
-      return tokens.div(1000).mul(55);
+    if (msg.value >= VOLUME_7_REF_4) {
+      return tokens.mul(4).div(100);
     }
 
-    if (msg.value >= 2000 * (1 ether) && msg.value < 5000 * (1 ether)) {
-      return tokens.div(100).mul(6);
+    if (msg.value >= VOLUME_5_REF_3) {
+      return tokens.mul(3).div(100);
     }
 
-    if (msg.value >= 5000 * (1 ether)) {
-      return tokens.div(100).mul(7);
-    }
+    return 0;
   }
 
   function receiveEthPrice(uint ethUsdPrice) external onlyEthPriceProvider {
     require(ethUsdPrice > 0);
-    jcrEthRate = ethUsdPrice.div(jcrUsdRate);
+    ethUsdRate = ethUsdPrice;
   }
 
   function receiveBtcPrice(uint btcUsdPrice) external onlyBtcPriceProvider {
     require(btcUsdPrice > 0);
-    jcrBtcRate = btcUsdPrice.div(jcrUsdRate);
+    btcUsdRate = btcUsdPrice;
   }
 
   function setEthPriceProvider(address provider) external onlyOwner {
@@ -214,7 +220,7 @@ contract JincorTokenICO is Haltable, PriceReceiver {
   function doPurchase() private icoActive inNormalState {
     require(!crowdsaleFinished);
 
-    uint tokens = msg.value.mul(jcrEthRate);
+    uint tokens = msg.value.mul(ethUsdRate).div(jcrUsdRate);
     uint referralBonus = calculateReferralBonus(tokens);
     address referral = investorWhiteList.getReferralOf(msg.sender);
 
@@ -228,7 +234,7 @@ contract JincorTokenICO is Haltable, PriceReceiver {
 
     require(newTokensSold <= hardCap);
 
-    if (!softCapReached && tokensSold < softCap && newTokensSold >= softCap) {
+    if (!softCapReached && newTokensSold >= softCap) {
       softCapReached = true;
       SoftCapReached(softCap);
     }

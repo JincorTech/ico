@@ -101,17 +101,17 @@ contract('JincorTokenICO', function (accounts) {
   it('should allow to update ETH price by ETH price provider', async function () {
     await this.crowdsale.receiveEthPrice(25000, {from: ethPriceProvider});
 
-    const jcrEthRate = await this.crowdsale.jcrEthRate();
+    const ethUsdRate = await this.crowdsale.ethUsdRate();
 
-    assert.equal(jcrEthRate, 250);
+    assert.equal(ethUsdRate, 25000);
   });
 
   it('should allow to update BTC price by BTC price provider', async function () {
     await this.crowdsale.receiveBtcPrice(420000, {from: btcPriceProvider});
 
-    const jcrUsdRate = await this.crowdsale.jcrBtcRate();
+    const btcUsdRate = await this.crowdsale.btcUsdRate();
 
-    assert.equal(jcrUsdRate, 4200);
+    assert.equal(btcUsdRate, 420000);
   });
 
   it('should not allow to update ETH price by not ETH price provider', async function () {
@@ -229,7 +229,8 @@ contract('JincorTokenICO', function (accounts) {
 
   it('should increase deposit accordingly with several investments', async function () {
     await this.whiteList.addInvestorToWhiteList(accounts[2]);
-    await this.whiteList.addInvestorToListReferral(accounts[3], accounts[4]);
+    await this.whiteList.addInvestorToWhiteList(accounts[3]);
+    await this.whiteList.addReferralOf(accounts[3], accounts[4]);
 
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[2]});
 
@@ -252,7 +253,8 @@ contract('JincorTokenICO', function (accounts) {
   });
 
   it('should not add bonus and send any tokens to referral for less than 100 ETH investment', async function () {
-    await this.whiteList.addInvestorToListReferral(accounts[2], accounts[3]);
+    await this.whiteList.addInvestorToWhiteList(accounts[2]);
+    await this.whiteList.addReferralOf(accounts[2], accounts[3]);
 
     await this.crowdsale.sendTransaction({
       value: 99 * 10 ** 18,
@@ -288,8 +290,11 @@ contract('JincorTokenICO', function (accounts) {
   });
 
   it('should add 5% bonus and send 3% referral bonus for 100-249 ETH investment', async function () {
-    await this.whiteList.addInvestorToListReferral(accounts[2], accounts[3]);
-    await this.whiteList.addInvestorToListReferral(accounts[4], accounts[5]);
+    await this.whiteList.addInvestorToWhiteList(accounts[2]);
+    await this.whiteList.addReferralOf(accounts[2], accounts[3]);
+
+    await this.whiteList.addInvestorToWhiteList(accounts[4]);
+    await this.whiteList.addReferralOf(accounts[4], accounts[5]);
 
     await this.crowdsale.sendTransaction({
       value: 100 * 10 ** 18,
@@ -331,8 +336,11 @@ contract('JincorTokenICO', function (accounts) {
   });
 
   it('should add 7% bonus and send 4% referral bonus for 250-499 ETH investment', async function () {
-    await this.whiteList.addInvestorToListReferral(accounts[2], accounts[3]);
-    await this.whiteList.addInvestorToListReferral(accounts[4], accounts[5]);
+    await this.whiteList.addInvestorToWhiteList(accounts[2]);
+    await this.whiteList.addReferralOf(accounts[2], accounts[3]);
+
+    await this.whiteList.addInvestorToWhiteList(accounts[4]);
+    await this.whiteList.addReferralOf(accounts[4], accounts[5]);
 
     await this.crowdsale.sendTransaction({
       value: 250 * 10 ** 18,
@@ -366,8 +374,11 @@ contract('JincorTokenICO', function (accounts) {
   });
 
   it('should add 10% bonus and send 5% referral bonus for 500-999 ETH investment', async function () {
-    await this.whiteList.addInvestorToListReferral(accounts[2], accounts[3]);
-    await this.whiteList.addInvestorToListReferral(accounts[4], accounts[5]);
+    await this.whiteList.addInvestorToWhiteList(accounts[2]);
+    await this.whiteList.addReferralOf(accounts[2], accounts[3]);
+
+    await this.whiteList.addInvestorToWhiteList(accounts[4]);
+    await this.whiteList.addReferralOf(accounts[4], accounts[5]);
 
     await this.crowdsale.sendTransaction({
       value: 500 * 10 ** 18,
@@ -401,8 +412,11 @@ contract('JincorTokenICO', function (accounts) {
   });
 
   it('should add 12.5% bonus send 5,5% referral bonus for 1000-1999 ETH investment', async function () {
-    await this.whiteList.addInvestorToListReferral(accounts[2], accounts[3]);
-    await this.whiteList.addInvestorToListReferral(accounts[4], accounts[5]);
+    await this.whiteList.addInvestorToWhiteList(accounts[2]);
+    await this.whiteList.addReferralOf(accounts[2], accounts[3]);
+
+    await this.whiteList.addInvestorToWhiteList(accounts[4]);
+    await this.whiteList.addReferralOf(accounts[4], accounts[5]);
 
     await this.crowdsale.sendTransaction({
       value: 1000 * 10 ** 18,
@@ -432,8 +446,11 @@ contract('JincorTokenICO', function (accounts) {
   });
 
   it('should add 15% bonus and send 6% referral bonus for 2000-4999 ETH investment', async function () {
-    await this.whiteList.addInvestorToListReferral(accounts[2], accounts[3]);
-    await this.whiteList.addInvestorToListReferral(accounts[4], accounts[5]);
+    await this.whiteList.addInvestorToWhiteList(accounts[2]);
+    await this.whiteList.addReferralOf(accounts[2], accounts[3]);
+
+    await this.whiteList.addInvestorToWhiteList(accounts[4]);
+    await this.whiteList.addReferralOf(accounts[4], accounts[5]);
 
     await this.crowdsale.sendTransaction({
       value: 2000 * 10 ** 18,
@@ -463,8 +480,11 @@ contract('JincorTokenICO', function (accounts) {
   });
 
   it('should add 20% bonus send 7% referral bonus for 5000 and more ETH investment', async function () {
-    await this.whiteList.addInvestorToListReferral(accounts[2], accounts[3]);
-    await this.whiteList.addInvestorToListReferral(accounts[4], accounts[5]);
+    await this.whiteList.addInvestorToWhiteList(accounts[2]);
+    await this.whiteList.addReferralOf(accounts[2], accounts[3]);
+
+    await this.whiteList.addInvestorToWhiteList(accounts[4]);
+    await this.whiteList.addReferralOf(accounts[4], accounts[5]);
 
     await this.crowdsale.sendTransaction({
       value: 5000 * 10 ** 18,
@@ -527,7 +547,8 @@ contract('JincorTokenICO', function (accounts) {
   });
 
   it('should set flag when softcap is reached - referral purchase', async function () {
-    await this.whiteList.addInvestorToListReferral(accounts[1], accounts[2]);
+    await this.whiteList.addInvestorToWhiteList(accounts[1]);
+    await this.whiteList.addReferralOf(accounts[1], accounts[2]);
 
     //ICO softcap will be reached with single 9843 ETH investment due to high volume and referral bonus
     await this.crowdsale.sendTransaction({value: 9843 * 10 ** 18, from: accounts[1]});
@@ -657,21 +678,21 @@ contract('JincorTokenICO', function (accounts) {
     assert.fail('should have thrown before');
   });
 
-  it('should not allow refund if ICO is halted', async function () {
+  it('should allow refund if ICO is halted', async function () {
     await this.whiteList.addInvestorToWhiteList(accounts[1]);
 
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[1]});
 
     advanceToBlock(this.endBlock);
-
     await this.crowdsale.halt();
 
-    try {
-      await this.crowdsale.refund({from: accounts[1]});
-    } catch (error) {
-      return assertJump(error);
-    }
-    assert.fail('should have thrown before');
+    const balanceBefore = web3.eth.getBalance(accounts[1]);
+
+    await this.crowdsale.refund({from: accounts[1]});
+
+    const balanceAfter = web3.eth.getBalance(accounts[1]);
+
+    assert.equal(balanceAfter > balanceBefore, true);
   });
 
   it('should refund if cap is not reached and ICO is ended', async function () {
