@@ -1,6 +1,6 @@
 # Jincor ICO Contracts
 ![](https://travis-ci.org/JincorTech/ico.svg?branch=master)
-![Jincor logo](https://raw.githubusercontent.com/JincorTech/ico/master/logo.png)
+![](https://habrastorage.org/webt/59/d5/42/59d542206afbe280817420.png)
 
 Baked with <3 by [Jincor](https://ico.jincor.com)
 
