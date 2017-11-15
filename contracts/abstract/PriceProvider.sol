@@ -2,8 +2,11 @@ pragma solidity ^0.4.0;
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../usingOraclize.sol";
 import "./PriceReceiver.sol";
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract PriceProvider is Ownable, usingOraclize {
+  using SafeMath for uint;
+
   enum State { Stopped, Active }
 
   uint public updateInterval = 7200; //2 hours by default
@@ -17,6 +20,14 @@ contract PriceProvider is Ownable, usingOraclize {
   PriceReceiver public watcher;
 
   State public state = State.Stopped;
+
+  uint constant MIN_ALLOWED_PRICE_DIFF = 85;
+
+  uint constant MAX_ALLOWED_PRICE_DIFF = 115;
+
+  event TooBigPriceDiff(uint oldValue, uint newValue);
+
+  event InsufficientFunds();
 
   function notifyWatcher() internal;
 
@@ -38,8 +49,12 @@ contract PriceProvider is Ownable, usingOraclize {
   }
 
   //send some funds along with the call to cover oraclize fees
-  function startUpdate() payable onlyOwner inStoppedState {
+  function startUpdate(uint startingPrice) payable onlyOwner inStoppedState {
     state = State.Active;
+
+    //we can set starting price manually, contract will notify watcher only in case of allowed diff
+    //so owner can't set too small or to big price anyway
+    currentPrice = startingPrice;
     update(updateInterval);
   }
 
@@ -64,21 +79,30 @@ contract PriceProvider is Ownable, usingOraclize {
 
   function __callback(bytes32 myid, string result, bytes proof) {
     require(msg.sender == oraclize_cbAddress() && validIds[myid]);
+    delete validIds[myid];
+
     uint newPrice = parseInt(result, 2);
     require(newPrice > 0);
-    currentPrice = newPrice;
+    uint changeInPercents = newPrice.mul(100).div(currentPrice);
 
-    if (state == State.Active) {
-      notifyWatcher();
-      update(updateInterval);
+    if (changeInPercents >= MIN_ALLOWED_PRICE_DIFF && changeInPercents <= MAX_ALLOWED_PRICE_DIFF) {
+      currentPrice = newPrice;
+
+      if (state == State.Active) {
+        notifyWatcher();
+        update(updateInterval);
+      }
+    } else {
+      state = State.Stopped;
+      TooBigPriceDiff(currentPrice, newPrice);
     }
-    delete validIds[myid];
   }
 
   function update(uint delay) private {
     if (oraclize_getPrice("URL") > this.balance) {
       //stop if we don't have enough funds anymore
       state = State.Stopped;
+      InsufficientFunds();
     } else {
       bytes32 queryId = oraclize_query(delay, "URL", url);
       validIds[queryId] = true;

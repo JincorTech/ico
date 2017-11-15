@@ -31,7 +31,7 @@ module.exports = function(deployer) {
     btcProvider.setWatcher(JincorTokenICO.address, { from: web3.eth.accounts[0] });
 
     //start update and send ETH to cover Oraclize fees
-    ethProvider.startUpdate({ value: web3.toWei(1000), from: web3.eth.accounts[0], gas: 200000 });
-    btcProvider.startUpdate({ value: web3.toWei(1000), from: web3.eth.accounts[0], gas: 200000 });
+    ethProvider.startUpdate(30000, { value: web3.toWei(1000), from: web3.eth.accounts[0], gas: 200000 });
+    btcProvider.startUpdate(650000, { value: web3.toWei(1000), from: web3.eth.accounts[0], gas: 200000 });
   });
 };

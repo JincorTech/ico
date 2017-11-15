@@ -33,7 +33,7 @@ contract JincorToken is Burnable, Ownable {
     _;
   }
 
-  /** The function can be called only before or after the tokens have been releasesd */
+  /** The function can be called only before or after the tokens have been released */
   modifier inReleaseState(bool releaseState) {
     require(releaseState == released);
     _;
@@ -47,7 +47,7 @@ contract JincorToken is Burnable, Ownable {
 
 
   /**
-   * @dev Contructor that gives msg.sender all of existing tokens.
+   * @dev Constructor that gives msg.sender all of existing tokens.
    */
   function JincorToken() {
     totalSupply = INITIAL_SUPPLY;

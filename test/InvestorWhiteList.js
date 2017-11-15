@@ -38,24 +38,22 @@ contract("InvestorWhiteList", function (accounts) {
   });
 
   it('should allow only owner to add new referral', async function () {
-    await this.whiteList.addInvestorToListReferral(accounts[1], accounts[2]);
+    await this.whiteList.addReferralOf(accounts[1], accounts[2]);
 
-    const allowed = await this.whiteList.isAllowed.call(accounts[1]);
     const referral = await this.whiteList.getReferralOf.call(accounts[1]);
     assert.equal(accounts[2], referral);
-    assert.equal(true, allowed);
 
     //should not allow to add 1 more time
-    await this.whiteList.addInvestorToListReferral(accounts[1], accounts[2]).should.be.rejectedWith('invalid opcode');
+    await this.whiteList.addReferralOf(accounts[1], accounts[2]).should.be.rejectedWith('invalid opcode');
 
     //should not allow zero address values
-    await this.whiteList.addInvestorToListReferral(0x0, accounts[4]).should.be.rejectedWith('invalid opcode');
-    await this.whiteList.addInvestorToListReferral(accounts[3], 0x0).should.be.rejectedWith('invalid opcode');
+    await this.whiteList.addReferralOf(0x0, accounts[4]).should.be.rejectedWith('invalid opcode');
+    await this.whiteList.addReferralOf(accounts[3], 0x0).should.be.rejectedWith('invalid opcode');
 
     //should not allow to set referral address same as investor
-    await this.whiteList.addInvestorToListReferral(accounts[4], accounts[4]).should.be.rejectedWith('invalid opcode');
+    await this.whiteList.addReferralOf(accounts[4], accounts[4]).should.be.rejectedWith('invalid opcode');
 
     //should not allow to call by not owner
-    await this.whiteList.addInvestorToListReferral(accounts[3], accounts[4], { from: accounts[2] }).should.be.rejectedWith('invalid opcode');
+    await this.whiteList.addReferralOf(accounts[3], accounts[4], { from: accounts[2] }).should.be.rejectedWith('invalid opcode');
   });
 });

@@ -43,7 +43,7 @@ contract('EthPriceProvider', function (accounts) {
 
   it('should allow to start update only for owner', async function () {
     try {
-      await this.ethPriceProvider.startUpdate({ value: web3.toWei(10), from: accounts[1] });
+      await this.ethPriceProvider.startUpdate(30000, { value: web3.toWei(10), from: accounts[1] });
     } catch (error) {
       return assertJump(error);
     }
@@ -51,11 +51,14 @@ contract('EthPriceProvider', function (accounts) {
   });
 
   it('should allow to start update', async function () {
-    await this.ethPriceProvider.startUpdate({ value: web3.toWei(10), from: accounts[0] });
+    await this.ethPriceProvider.startUpdate(30000, { value: web3.toWei(10), from: accounts[0] });
+
+    const currentPrice = await this.ethPriceProvider.currentPrice();
+    assert.equal(30000, currentPrice);
 
     //should not allow to start again
     try {
-      await this.ethPriceProvider.startUpdate({ value: web3.toWei(10), from: accounts[0] });
+      await this.ethPriceProvider.startUpdate(30000, { value: web3.toWei(10), from: accounts[0] });
     } catch (error) {
       return assertJump(error);
     }
@@ -63,7 +66,7 @@ contract('EthPriceProvider', function (accounts) {
   });
 
   it('should allow to stop update', async function () {
-    await this.ethPriceProvider.startUpdate({ value: web3.toWei(10), from: accounts[0] });
+    await this.ethPriceProvider.startUpdate(30000, { value: web3.toWei(10), from: accounts[0] });
     await this.ethPriceProvider.stopUpdate({ from: accounts[0] });
 
     //should not allow to stop again
@@ -76,7 +79,7 @@ contract('EthPriceProvider', function (accounts) {
   });
 
   it('should allow to stop update only by owner', async function () {
-    await this.ethPriceProvider.startUpdate({ value: web3.toWei(10), from: accounts[0] });
+    await this.ethPriceProvider.startUpdate(30000, { value: web3.toWei(10), from: accounts[0] });
 
     try {
       await this.ethPriceProvider.stopUpdate({ from: accounts[1] });
@@ -147,7 +150,7 @@ contract('EthPriceProvider', function (accounts) {
   });
 
   it('should allow withdraw only in stopped state', async function () {
-    await this.ethPriceProvider.startUpdate({ value: web3.toWei(10), from: accounts[0] });
+    await this.ethPriceProvider.startUpdate(30000, { value: web3.toWei(10), from: accounts[0] });
 
     try {
       await this.ethPriceProvider.withdraw(accounts[0], { from: accounts[0] });
@@ -158,7 +161,7 @@ contract('EthPriceProvider', function (accounts) {
   });
 
   it('should allow withdraw only for owner', async function () {
-    await this.ethPriceProvider.startUpdate({ value: web3.toWei(10), from: accounts[0] });
+    await this.ethPriceProvider.startUpdate(30000, { value: web3.toWei(10), from: accounts[0] });
 
     try {
       await this.ethPriceProvider.withdraw(accounts[1], { from: accounts[1] });
@@ -169,7 +172,7 @@ contract('EthPriceProvider', function (accounts) {
   });
 
   it('should allow withdraw', async function () {
-    await this.ethPriceProvider.startUpdate({ value: web3.toWei(10), from: accounts[0] });
+    await this.ethPriceProvider.startUpdate(30000, { value: web3.toWei(10), from: accounts[0] });
     await this.ethPriceProvider.stopUpdate({ from: accounts[0] });
 
     const oldBalance = web3.eth.getBalance(accounts[0]).toNumber();
