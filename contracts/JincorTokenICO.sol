@@ -77,7 +77,7 @@ contract JincorTokenICO is Haltable, PriceReceiver {
   }
 
   modifier minInvestment() {
-    require(msg.value >= 1 ether);
+    require(msg.value >= 0.1 * 1 ether);
     _;
   }
 

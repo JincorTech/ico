@@ -1,5 +1,7 @@
 const JincorToken = artifacts.require("JincorToken");
-const assertJump = require("zeppelin-solidity/test/helpers/assertJump.js");
+const assertJump = function(error) {
+  assert.isAbove(error.message.search('VM Exception while processing transaction: revert'), -1, 'Invalid opcode error must be returned');
+};
 
 contract('JincorToken', function(accounts) {
   it("should put 35000000 JCR to supply and in the first account", async function () {

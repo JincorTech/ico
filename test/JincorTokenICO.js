@@ -1,7 +1,10 @@
 const JincorToken = artifacts.require("JincorToken");
 const JincorTokenICO = artifacts.require("JincorTokenICO");
-const assertJump = require("zeppelin-solidity/test/helpers/assertJump.js");
 const InvestorWhiteList = artifacts.require("InvestorWhiteList");
+
+const assertJump = function(error) {
+  assert.isAbove(error.message.search('VM Exception while processing transaction: revert'), -1, 'Invalid opcode error must be returned');
+};
 
 const hardCap = 26600000; //in JCR
 const softCap = 2500000; //in JCR
@@ -13,7 +16,7 @@ const btcPriceProvider = web3.eth.accounts[7];
 
 function advanceToBlock(number) {
   if (web3.eth.blockNumber > number) {
-    throw Error(`block number ${number} is in the past (current is ${web3.eth.blockNumber})`)
+    throw Error(`block number ${number} is in thfe past (current is ${web3.eth.blockNumber})`)
   }
 
   while (web3.eth.blockNumber < number) {
@@ -525,11 +528,11 @@ contract('JincorTokenICO', function (accounts) {
     assert.fail('should have thrown before');
   });
 
-  it('should not allow to send less than 1 ETH', async function () {
+  it('should not allow to send less than 0.1 ETH', async function () {
     await this.whiteList.addInvestorToWhiteList(accounts[2]);
 
     try {
-      await this.crowdsale.sendTransaction({value: 0.9999 * 10 ** 18, from: accounts[2]});
+      await this.crowdsale.sendTransaction({value: 0.0999 * 10 ** 18, from: accounts[2]});
     } catch (error) {
       return assertJump(error);
     }
