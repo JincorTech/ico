@@ -1,6 +1,9 @@
 const JincorToken = artifacts.require("JincorToken");
 const JincorTokenPreSale = artifacts.require("JincorTokenPreSale");
-const assertJump = require("zeppelin-solidity/test/helpers/assertJump.js");
+
+const assertJump = function(error) {
+  assert.isAbove(error.message.search('VM Exception while processing transaction: revert'), -1, 'Invalid opcode error must be returned');
+};
 
 const hardCap = 700; //in USD
 const softCap = 500; //in USD

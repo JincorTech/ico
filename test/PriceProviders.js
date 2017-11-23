@@ -1,6 +1,9 @@
 const EthPriceProvider = artifacts.require("EthPriceProvider");
 const BtcPriceProvider = artifacts.require("BtcPriceProvider");
-const assertJump = require("zeppelin-solidity/test/helpers/assertJump.js");
+
+const assertJump = function(error) {
+  assert.isAbove(error.message.search('VM Exception while processing transaction: revert'), -1, 'Invalid opcode error must be returned');
+};
 
 contract('EthPriceProvider', function (accounts) {
   beforeEach(async function () {
