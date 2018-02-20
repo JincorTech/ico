@@ -50,7 +50,7 @@ contract JincorToken is Burnable, Ownable {
    * @dev Constructor that gives msg.sender all of existing tokens.
    */
   function JincorToken() {
-    totalSupply = INITIAL_SUPPLY;
+    totalSupply_ = INITIAL_SUPPLY;
     balances[msg.sender] = INITIAL_SUPPLY;
   }
 

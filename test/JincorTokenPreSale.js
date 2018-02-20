@@ -1,5 +1,6 @@
 const JincorToken = artifacts.require("JincorToken");
 const JincorTokenPreSale = artifacts.require("JincorTokenPreSale");
+const { TestPaymentGatewayMethods } = require('./PaymentGatewayTests');
 
 const assertJump = function(error) {
   assert.isAbove(error.message.search('VM Exception while processing transaction: revert'), -1, 'Invalid opcode error must be returned');
@@ -30,13 +31,15 @@ contract('JincorTokenPresale', function (accounts) {
     const totalTokens = 2800; //NOT in wei, converted by contract
 
     this.crowdsale = await JincorTokenPreSale.new(hardCap, softCap, this.token.address, beneficiary, totalTokens, ethUsdPrice, limit, this.startBlock, this.endBlock);
-    this.token.setTransferAgent(this.token.address, true);
-    this.token.setTransferAgent(this.crowdsale.address, true);
-    this.token.setTransferAgent(accounts[0], true);
+    await this.token.setTransferAgent(this.token.address, true);
+    await this.token.setTransferAgent(this.crowdsale.address, true);
+    await this.token.setTransferAgent(accounts[0], true);
 
     //transfer more than totalTokens to test hardcap reach properly
-    this.token.transfer(this.crowdsale.address, web3.toWei(5000, "ether"));
+    await this.token.transfer(this.crowdsale.address, web3.toWei(5000, "ether"));
   });
+
+  TestPaymentGatewayMethods.call(this, accounts, (t) => t.token, (t) => t.crowdsale);
 
   it('should allow to halt by owner', async function () {
     await this.crowdsale.halt();

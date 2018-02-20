@@ -5,9 +5,10 @@ import "./Haltable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./JincorToken.sol";
+import "./PaymentGateway.sol";
 
 
-contract JincorTokenPreSale is Haltable {
+contract JincorTokenPreSale is Haltable, PaymentGateway {
   using SafeMath for uint;
 
   string public constant name = "Jincor Token PreSale";
@@ -110,6 +111,16 @@ contract JincorTokenPreSale is Haltable {
     beneficiary.transfer(collected);
     token.transfer(beneficiary, token.balanceOf(this));
     crowdsaleFinished = true;
+  }
+
+  function setPaymentGatewayAgent(address to) external onlyOwner returns (bool) {
+    require(to != address(0) && to != paymentGatewayAgent);
+    paymentGatewayAgent = to;
+    return true;
+  }
+
+  function transferWithPaymentGateway(bytes6 gatewayId, bytes32 transactionId, address to, uint tokensAmount) external preSaleActive inNormalState returns (bool) {
+    return transferWithPaymentGatewayInternal(token, gatewayId, transactionId, to, tokensAmount);
   }
 
   function doPurchase(address _owner) private preSaleActive inNormalState {

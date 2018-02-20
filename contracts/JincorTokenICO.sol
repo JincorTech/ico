@@ -1,13 +1,16 @@
 pragma solidity ^0.4.11;
 
+
 import "./Haltable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./JincorToken.sol";
 import "./InvestorWhiteList.sol";
 import "./abstract/PriceReceiver.sol";
+import "./PaymentGateway.sol";
 
-contract JincorTokenICO is Haltable, PriceReceiver {
+
+contract JincorTokenICO is Haltable, PaymentGateway, PriceReceiver {
   using SafeMath for uint;
 
   string public constant name = "Jincor Token ICO";
@@ -215,6 +218,16 @@ contract JincorTokenICO is Haltable, PriceReceiver {
   function setNewWhiteList(address newWhiteList) external onlyOwner {
     require(newWhiteList != 0x0);
     investorWhiteList = InvestorWhiteList(newWhiteList);
+  }
+
+  function setPaymentGatewayAgent(address to) external onlyOwner returns (bool) {
+    require(to != address(0) && to != paymentGatewayAgent);
+    paymentGatewayAgent = to;
+    return true;
+  }
+
+  function transferWithPaymentGateway(bytes6 gatewayId, bytes32 transactionId, address to, uint tokensAmount) external icoActive inNormalState returns (bool) {
+    return transferWithPaymentGatewayInternal(token, gatewayId, transactionId, to, tokensAmount);
   }
 
   function doPurchase() private icoActive inNormalState {

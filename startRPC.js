@@ -1,4 +1,4 @@
-const TestRPC = require("ethereumjs-testrpc");
+const TestRPC = require("ganache-cli");
 
 //create 10 accounts with 1000000 ETH Balance
 const server = TestRPC.server({

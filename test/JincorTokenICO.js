@@ -1,6 +1,7 @@
 const JincorToken = artifacts.require("JincorToken");
 const JincorTokenICO = artifacts.require("JincorTokenICO");
 const InvestorWhiteList = artifacts.require("InvestorWhiteList");
+const { TestPaymentGatewayMethods } = require('./PaymentGatewayTests');
 
 const assertJump = function(error) {
   assert.isAbove(error.message.search('VM Exception while processing transaction: revert'), -1, 'Invalid opcode error must be returned');
@@ -43,6 +44,8 @@ contract('JincorTokenICO', function (accounts) {
     //transfer more than hardcap to test hardcap reach properly
     this.token.transfer(this.crowdsale.address, web3.toWei(30000000, "ether"));
   });
+
+  TestPaymentGatewayMethods.call(this, accounts, (t) => t.token, (t) => t.crowdsale);
 
   it('should allow to halt by owner', async function () {
     await this.crowdsale.halt();
