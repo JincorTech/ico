@@ -8,7 +8,10 @@ before_install:
 
 script:
 #wait for 1 minute first as oracle container need to deploy connector contracts
-  - docker-compose run --rm workspace sh -c "sleep 120 && yarn && truffle test"
+  - docker-compose up -d #run --rm workspace sh -c "sleep 120 && yarn && truffle test"
+  - sleep 60
+  - docker-compose exec workspace yarn
+  - docker-compose exec workspace truffle test
   - docker-compose down
 notifications:
   slack:
