@@ -4,7 +4,7 @@ services:
   - docker
 
 before_install:
-  - docker-compose build
+  - docker-compose build --no-cache
 
 script:
 #wait for 1 minute first as oracle container need to deploy connector contracts
