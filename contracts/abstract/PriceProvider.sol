@@ -41,7 +41,7 @@ contract PriceProvider is Ownable, usingOraclize {
     _;
   }
 
-  function PriceProvider(string _url) {
+  function PriceProvider(string _url) public {
     url = _url;
 
     //update immediately first time to be sure everything is working - first oraclize request is free.
@@ -49,7 +49,7 @@ contract PriceProvider is Ownable, usingOraclize {
   }
 
   //send some funds along with the call to cover oraclize fees
-  function startUpdate(uint startingPrice) payable onlyOwner inStoppedState {
+  function startUpdate(uint startingPrice) external payable onlyOwner inStoppedState {
     state = State.Active;
 
     //we can set starting price manually, contract will notify watcher only in case of allowed diff
@@ -77,7 +77,7 @@ contract PriceProvider is Ownable, usingOraclize {
     url = newUrl;
   }
 
-  function __callback(bytes32 myid, string result, bytes proof) {
+  function __callback(bytes32 myid, string result, bytes proof) public {
     require(msg.sender == oraclize_cbAddress() && validIds[myid]);
     delete validIds[myid];
 
